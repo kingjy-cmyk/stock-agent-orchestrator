@@ -5,6 +5,7 @@ from pathlib import Path
 from stock_agent_orchestrator.config import load_config
 from stock_agent_orchestrator.services.beta_live_config_env import (
     beta_live_config_from_env_to_markdown,
+    render_beta_live_env_template,
     write_beta_live_config_from_env,
 )
 
@@ -65,6 +66,20 @@ class BetaLiveConfigFromEnvTests(unittest.TestCase):
             self.assertNotIn("secret-value", rendered)
             self.assertNotIn("verify-token-secret", rendered)
             self.assertNotIn("encrypt-key-secret", rendered)
+
+    def test_renders_powershell_env_template(self) -> None:
+        rendered = render_beta_live_env_template(shell="powershell")
+
+        self.assertIn("$env:FEISHU_APP_ID", rendered)
+        self.assertIn("$env:FEISHU_APP_SECRET", rendered)
+        self.assertIn("beta-live-config-from-env", rendered)
+
+    def test_renders_bash_env_template(self) -> None:
+        rendered = render_beta_live_env_template(shell="bash")
+
+        self.assertIn("export FEISHU_APP_ID", rendered)
+        self.assertIn("export FEISHU_APP_SECRET", rendered)
+        self.assertIn("beta-live-config-from-env", rendered)
 
     def _env(self) -> dict[str, str]:
         return {

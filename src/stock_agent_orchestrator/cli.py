@@ -35,6 +35,7 @@ from stock_agent_orchestrator.services.beta_live_config import (
 from stock_agent_orchestrator.services.beta_live_config_env import (
     beta_live_config_from_env_to_dict,
     beta_live_config_from_env_to_markdown,
+    render_beta_live_env_template,
     write_beta_live_config_from_env,
 )
 from stock_agent_orchestrator.services.beta_live_config_status import (
@@ -156,6 +157,9 @@ def build_parser() -> argparse.ArgumentParser:
     beta_live_config_from_env.add_argument("--output", default="configs/beta.live.toml")
     beta_live_config_from_env.add_argument("--overwrite", action="store_true")
     beta_live_config_from_env.add_argument("--format", choices=["json", "markdown"], default="markdown")
+
+    beta_live_env_template = sub.add_parser("beta-live-env-template")
+    beta_live_env_template.add_argument("--shell", choices=["powershell", "bash"], default="powershell")
 
     beta_live_config_status = sub.add_parser("beta-live-config-status")
     beta_live_config_status.add_argument("--repo-root", default=".")
@@ -453,6 +457,10 @@ def main() -> None:
         print(rendered)
         if not result.written:
             raise SystemExit(1)
+        return
+
+    if args.command == "beta-live-env-template":
+        print(render_beta_live_env_template(shell=args.shell))
         return
 
     if args.command == "beta-live-config-status":

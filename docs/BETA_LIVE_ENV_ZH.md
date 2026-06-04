@@ -13,6 +13,12 @@
 
 ## 需要的环境变量
 
+可以直接生成模板：
+
+```bash
+stock-agent-orchestrator beta-live-env-template --shell powershell
+```
+
 ```powershell
 $env:STOCK_AGENT_CANDIDATE_LIST="C:\path\to\candidate_list.md"
 $env:STOCK_AGENT_SEVEN_LAYER_REPORTS="C:\path\to\seven_layer"

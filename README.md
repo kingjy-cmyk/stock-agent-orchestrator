@@ -61,7 +61,7 @@ Current status:
 
 - local install/demo/smoke paths are documented
 - Feishu connector has a safe beta preflight gate
-- 92 unit tests pass locally
+- 94 unit tests pass locally
 - real Feishu beta validation is still pending
 
 Current readiness can be checked by command:
@@ -260,6 +260,10 @@ stock-agent-orchestrator beta-live-config-status --config configs/beta.live.toml
 ```
 
 To generate the ignored live config from environment variables:
+
+```bash
+stock-agent-orchestrator beta-live-env-template --shell powershell
+```
 
 ```bash
 stock-agent-orchestrator beta-live-config-from-env --output configs/beta.live.toml --overwrite --format markdown

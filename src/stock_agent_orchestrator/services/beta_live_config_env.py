@@ -29,6 +29,22 @@ SENSITIVE_ENV_NAMES = {
     "FEISHU_ENCRYPT_KEY",
 }
 
+ENV_DEFAULTS = {
+    "STOCK_AGENT_CANDIDATE_LIST": "C:\\path\\to\\candidate_list.md",
+    "STOCK_AGENT_SEVEN_LAYER_REPORTS": "C:\\path\\to\\seven_layer",
+    "STOCK_AGENT_ENTRY_MONITOR_REPORTS": "C:\\path\\to\\entry_monitor",
+    "STOCK_AGENT_SQLITE_DB": "./runtime/beta-live.db",
+    "FEISHU_GROUP_CHAT_ID": "oc_xxx",
+    "FEISHU_OWNER_OPEN_ID": "ou_xiaoc_beta",
+    "FEISHU_DATA_OPEN_ID": "ou_xiaozhi_beta",
+    "FEISHU_ANALYST_OPEN_ID": "ou_xiaoba_beta",
+    "FEISHU_APP_ID": "cli_xxx",
+    "FEISHU_APP_SECRET": "<secret>",
+    "FEISHU_VERIFICATION_TOKEN": "<token>",
+    "FEISHU_ENCRYPT_KEY": "<encrypt-key>",
+    "FEISHU_WEBHOOK_RATE_LIMIT_PER_MINUTE": "60",
+}
+
 
 @dataclass(frozen=True, slots=True)
 class BetaLiveConfigFromEnvResult:
@@ -137,6 +153,21 @@ def beta_live_config_from_env_to_markdown(result: BetaLiveConfigFromEnvResult) -
     return "\n".join(lines)
 
 
+def render_beta_live_env_template(*, shell: str = "powershell") -> str:
+    normalized = shell.strip().lower()
+    if normalized not in {"powershell", "bash"}:
+        raise ValueError("shell must be powershell or bash")
+    lines = [
+        "# Fill these values, then run:",
+        "# stock-agent-orchestrator beta-live-config-from-env --output configs/beta.live.toml --overwrite --format markdown",
+        "",
+    ]
+    for _field, env_name in ENV_FIELDS:
+        lines.append(_env_line(shell=normalized, env_name=env_name, value=ENV_DEFAULTS[env_name]))
+    lines.append(_env_line(shell=normalized, env_name="FEISHU_WEBHOOK_RATE_LIMIT_PER_MINUTE", value=ENV_DEFAULTS["FEISHU_WEBHOOK_RATE_LIMIT_PER_MINUTE"]))
+    return "\n".join(lines)
+
+
 def _render_config(env: Mapping[str, str]) -> str:
     rate_limit = str(env.get("FEISHU_WEBHOOK_RATE_LIMIT_PER_MINUTE", "60")).strip() or "60"
     sqlite_db = str(env.get("STOCK_AGENT_SQLITE_DB", "./runtime/beta-live.db")).strip()
@@ -183,6 +214,13 @@ def _render_config(env: Mapping[str, str]) -> str:
 
 def _toml_escape(value: str) -> str:
     return str(value).replace("\\", "\\\\").replace('"', '\\"')
+
+
+def _env_line(*, shell: str, env_name: str, value: str) -> str:
+    escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+    if shell == "powershell":
+        return f'$env:{env_name}="{escaped}"'
+    return f'export {env_name}="{escaped}"'
 
 
 def _next_steps(*, written: bool) -> list[str]:
