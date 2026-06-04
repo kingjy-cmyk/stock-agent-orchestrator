@@ -22,7 +22,7 @@
 |---|---|---|---|
 | Gateway 抽象 | 部分完成 | `FeishuWebhookGateway` | 还缺真实多 gateway 管理 |
 | Operation 抽象 | 已开始 | `FeishuOperation` / `FeishuOperationGateway` | 还缺完整 card/image/reaction/delete |
-| Apply operations | 已开始 | `ClientOperationGateway.apply()` | 还缺 update_card 和批量错误处理 |
+| Apply operations | 已完成 MVP | `ClientOperationGateway.apply()` | 还缺批量错误处理和更多 operation 类型 |
 | Ingress queue | 已完成 MVP | `BoundedIngressQueue` | 后续补持久化和 stale drop |
 | Worker/Daemon 分离 | 已完成 MVP | `ConnectorWorker` | 后续补常驻进程状态和优雅关闭 |
 | HTTP webhook service | 已完成本地版 | `run-webhook` / `/webhook` / `/healthz` | 还缺公网部署和 encrypt key 解密 |
@@ -31,7 +31,7 @@
 | Live send client | 已完成安全骨架 | `LiveFeishuClient` | 待真实 beta 群验收 |
 | Send safety gate | 已完成 MVP | `send_mode=live` + `--allow-live-send` + `send_allowlist` | 后续补更细的 per-agent 权限 |
 | Card action callback | 未完成 | 无 | Stage 3 需要补 |
-| Interactive card update | 未完成 | 仅预留 `UPDATE_CARD` | Stage 3 需要补 |
+| Interactive card update | 已完成 MVP | `SEND_CARD` 发送 updateable interactive card，`UPDATE_CARD` 通过 `message_id` 更新 | 待真实 beta 群验收 |
 | Message dedupe | 已完成 MVP | `FeishuWebhookGateway` 内存去重 | 后续补持久化，避免重启后丢状态 |
 | Rate limit | 未完成 | 仅队列上限 | 真实 beta 前必须补 |
 | Gateway state | 已完成 MVP | `/healthz` 暴露 `connected/degraded` 和计数 | 后续补 daemon 级心跳 |
@@ -59,8 +59,14 @@
 - rate limit 细化
 - 去重和错误记录持久化
 
-Stage 3 前必须补：
+Stage 3 已补：
+
+- update_card
+- 任务卡 message_id 绑定到 task context
+- 小智/小巴后续进展优先更新同一张任务卡
+
+Stage 3 后续仍需补：
 
 - card action payload
-- update_card
-- 任务卡 message_id 绑定到 task context（已完成 MVP，后续用于 `update_card`）
+- reply/thread/message_id 到 task_id 的绑定
+- 真实 beta 群验收报告

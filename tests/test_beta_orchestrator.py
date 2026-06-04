@@ -39,6 +39,7 @@ class BetaOrchestratorTests(unittest.TestCase):
             self.assertEqual(task.context["task_card_message_id"], "fake-msg-0001")
             self.assertEqual(task.context["latest_task_card_message_id"], "fake-msg-0001")
             self.assertEqual(task.context["task_card_send_count"], 1)
+            self.assertEqual(client.sent_messages[0].metadata["msg_type"], "interactive")
 
     def test_wrong_chat_is_ignored(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -103,10 +104,13 @@ class BetaOrchestratorTests(unittest.TestCase):
             self.assertIsNotNone(task)
             self.assertEqual(task.status.value, "scanning")
             self.assertEqual(task.context["task_card_message_id"], "fake-msg-0001")
-            self.assertEqual(task.context["latest_task_card_message_id"], "fake-msg-0002")
-            self.assertEqual(task.context["task_card_send_count"], 2)
-            self.assertIn("候选池已筛出", client.sent_messages[-1].text)
-            self.assertEqual(len(client.sent_messages), 2)
+            self.assertEqual(task.context["latest_task_card_message_id"], "fake-msg-0001")
+            self.assertEqual(task.context["task_card_send_count"], 1)
+            self.assertEqual(task.context["task_card_update_count"], 1)
+            self.assertIn("候选池已筛出", client.sent_messages[0].text)
+            self.assertEqual(len(client.sent_messages), 1)
+            self.assertEqual(len(client.updated_messages), 1)
+            self.assertEqual(client.updated_messages[0].message_id, "fake-msg-0001")
 
     def test_agent_followup_with_task_id_updates_that_task_not_latest_task(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -158,7 +162,8 @@ class BetaOrchestratorTests(unittest.TestCase):
             self.assertIsNotNone(task_2)
             self.assertEqual(task_1.status.value, "scanning")
             self.assertEqual(task_2.status.value, "planned")
-            self.assertIn("任务卡：BETA-0001", client.sent_messages[-1].text)
+            self.assertIn("任务卡：BETA-0001", client.updated_messages[-1].text)
+            self.assertEqual(client.updated_messages[-1].message_id, "fake-msg-0001")
 
     def test_agent_followup_with_unknown_task_id_is_ignored(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

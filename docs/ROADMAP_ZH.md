@@ -136,7 +136,7 @@
 
 ### Phase 1B：真实 Feishu Connector MVP
 
-当前状态：`待开始`
+当前状态：`进行中`
 
 目标：
 
@@ -147,9 +147,25 @@
 验收标准：
 
 - beta 群 @小C-beta 后，真实群里出现任务卡
+- 小智-beta / 小巴-beta 后续进展优先更新同一张任务卡，而不是反复刷出新卡
 - 非 beta 群消息被忽略
 - formal 配置不能 active 发送
 - 任务状态保存到 SQLite
+
+已实现：
+
+- 本地 fake Feishu 可验证 beta 群消息建任务、发送任务卡、agent 跟进更新任务。
+- 任务卡发送已升级为可更新的飞书 interactive card。
+- 任务 context 会保存首次任务卡 `message_id`。
+- 后续 agent 跟进同一任务时优先走 `UPDATE_CARD`。
+- `LiveFeishuClient` 已具备 `send_card` 和 `update_card` 请求形态。
+
+仍缺：
+
+- 真实 beta 群 event subscription。
+- 公网 callback 部署。
+- 真实 beta 群截图或录屏。
+- `docs/BETA_VALIDATION_REPORT_ZH.md`。
 
 验收标准：
 

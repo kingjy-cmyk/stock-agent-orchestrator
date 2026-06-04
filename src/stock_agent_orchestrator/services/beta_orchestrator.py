@@ -102,13 +102,16 @@ class BetaOrchestratorService:
         return self._send_task_card(event.chat_id, task)
 
     def _send_task_card(self, chat_id: str, task: Task) -> BetaProcessResult:
+        existing_card_message_id = str(task.context.get("task_card_message_id") or "")
+        operation_kind = FeishuOperationKind.UPDATE_CARD if existing_card_message_id else FeishuOperationKind.SEND_CARD
         try:
             sent = self.operation_gateway.apply(
                 [
                     FeishuOperation(
-                        kind=FeishuOperationKind.SEND_CARD,
+                        kind=operation_kind,
                         chat_id=chat_id,
                         text=render_task_card_markdown(task),
+                        message_id=existing_card_message_id,
                         metadata={"task_id": task.task_id},
                     )
                 ]
@@ -118,7 +121,10 @@ class BetaOrchestratorService:
         if sent.message_id:
             task.context.setdefault("task_card_message_id", sent.message_id)
             task.context["latest_task_card_message_id"] = sent.message_id
-            task.context["task_card_send_count"] = int(task.context.get("task_card_send_count") or 0) + 1
+            if operation_kind == FeishuOperationKind.SEND_CARD:
+                task.context["task_card_send_count"] = int(task.context.get("task_card_send_count") or 0) + 1
+            else:
+                task.context["task_card_update_count"] = int(task.context.get("task_card_update_count") or 0) + 1
             self.store.save_task(task)
         return BetaProcessResult(True, task_id=task.task_id, sent_message=sent)
 

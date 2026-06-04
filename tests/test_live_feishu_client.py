@@ -84,6 +84,47 @@ class LiveFeishuClientTests(unittest.TestCase):
         self.assertIn("receive_id_type=chat_id", requests[1].full_url)
         self.assertEqual(requests[1].headers["Authorization"], "Bearer token-1")
 
+    def test_live_client_sends_updateable_interactive_card(self) -> None:
+        requests: list[urllib.request.Request] = []
+
+        def opener(request: urllib.request.Request):
+            requests.append(request)
+            if request.full_url.endswith("/open-apis/auth/v3/tenant_access_token/internal"):
+                return FakeHTTPResponse({"code": 0, "tenant_access_token": "token-1"})
+            return FakeHTTPResponse({"code": 0, "data": {"message_id": "msg-card-1"}})
+
+        client = LiveFeishuClient(app_id="app", app_secret="secret", opener=opener)
+
+        sent = client.send_card("chat-id", "## 任务卡：BETA-0001")
+
+        body = json.loads(requests[1].data.decode("utf-8"))  # type: ignore[union-attr]
+        content = json.loads(body["content"])
+        self.assertEqual(sent.message_id, "msg-card-1")
+        self.assertEqual(body["msg_type"], "interactive")
+        self.assertTrue(content["config"]["update_multi"])
+        self.assertIn("任务卡：BETA-0001", content["elements"][0]["content"])
+
+    def test_live_client_updates_interactive_card_by_message_id(self) -> None:
+        requests: list[urllib.request.Request] = []
+
+        def opener(request: urllib.request.Request):
+            requests.append(request)
+            if request.full_url.endswith("/open-apis/auth/v3/tenant_access_token/internal"):
+                return FakeHTTPResponse({"code": 0, "tenant_access_token": "token-1"})
+            return FakeHTTPResponse({"code": 0, "data": {}})
+
+        client = LiveFeishuClient(app_id="app", app_secret="secret", opener=opener)
+
+        sent = client.update_card("om_card_1", "## 任务卡：BETA-0001\n- 状态：筛选中")
+
+        body = json.loads(requests[1].data.decode("utf-8"))  # type: ignore[union-attr]
+        content = json.loads(body["content"])
+        self.assertEqual(sent.message_id, "om_card_1")
+        self.assertEqual(requests[1].get_method(), "PATCH")
+        self.assertIn("/open-apis/im/v1/messages/om_card_1", requests[1].full_url)
+        self.assertTrue(content["config"]["update_multi"])
+        self.assertIn("筛选中", content["elements"][0]["content"])
+
     def test_operation_gateway_applies_send_card(self) -> None:
         client = FakeFeishuClient()
         gateway = ClientOperationGateway(client)
@@ -98,6 +139,33 @@ class LiveFeishuClientTests(unittest.TestCase):
         self.assertEqual(len(sent), 1)
         self.assertEqual(operation.message_id, "fake-msg-0001")
         self.assertEqual(client.sent_messages[0].text, "task card")
+
+    def test_operation_gateway_applies_update_card(self) -> None:
+        client = FakeFeishuClient()
+        gateway = ClientOperationGateway(client)
+        created = gateway.apply(
+            [
+                FeishuOperation(
+                    kind=FeishuOperationKind.SEND_CARD,
+                    chat_id="chat",
+                    text="task card",
+                )
+            ]
+        )[0]
+        operation = FeishuOperation(
+            kind=FeishuOperationKind.UPDATE_CARD,
+            chat_id="chat",
+            message_id=created.message_id,
+            text="updated task card",
+        )
+
+        sent = gateway.apply([operation])
+
+        self.assertEqual(len(sent), 1)
+        self.assertEqual(operation.message_id, "fake-msg-0001")
+        self.assertEqual(len(client.sent_messages), 1)
+        self.assertEqual(len(client.updated_messages), 1)
+        self.assertEqual(client.sent_messages[0].text, "updated task card")
 
     def test_operation_gateway_rejects_chat_outside_allowlist_and_records_error(self) -> None:
         recorder = ErrorRecorder()

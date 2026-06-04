@@ -49,6 +49,8 @@ Feishu Gateway
 - `verification_token`：飞书 event callback token 校验。
 - `FakeFeishuClient`：测试用发送器。
 - `LiveFeishuClient`：真实飞书发送器，默认不启用。
+- `send_card`：发送带 `config.update_multi=true` 的飞书 interactive card。
+- `update_card`：通过 `message_id` 更新已发送的飞书 interactive card。
 - `FeishuWebhookGateway`：本地 event callback gateway 骨架。
 - `run-webhook`：本地 HTTP webhook service。
 - `BetaOrchestratorService`：处理 beta 群消息并生成任务卡。
@@ -106,7 +108,7 @@ stock-agent-orchestrator beta-live-preflight --config configs/beta.live.toml --c
 3. worker 从 `BoundedIngressQueue` 拉取事件。
 4. 调用 `BetaOrchestratorService` 建任务和发送任务卡。
 5. 限频、去重、错误记录。
-6. 稳定后再考虑 interactive card update。
+6. 稳定后持续验证 interactive card update。
 
 ## 当前 beta 前安全能力
 
@@ -117,14 +119,30 @@ stock-agent-orchestrator beta-live-preflight --config configs/beta.live.toml --c
 - operation 发送失败会记录到 gateway，并让业务结果返回 `operation_error`，避免 worker 直接崩溃。
 - 小智-beta / 小巴-beta 的后续消息可推进同一任务，并发送更新后的任务卡 markdown。
 - 小智-beta / 小巴-beta 消息中显式包含 `BETA-0001` 时，会优先绑定该任务，降低多任务并行误更新风险。
-- 任务 context 会记录首次和最近一次任务卡 `message_id`，为后续 `update_card` 做准备。
+- 任务 context 会记录首次和最近一次任务卡 `message_id`。
+- 后续任务进展会优先通过 `UPDATE_CARD` 更新同一张任务卡，减少重复刷屏。
+
+## 任务卡更新
+
+真实飞书卡片更新使用官方接口：
+
+```text
+PATCH /open-apis/im/v1/messages/:message_id
+```
+
+关键约束：
+
+- 初次发送必须是 `interactive` 消息。
+- 初次发送和后续更新的卡片都必须包含 `config.update_multi=true`。
+- 只能更新当前应用发送、未撤回、仍在可更新期限内的卡片。
+- 单条消息更新频控需要在真实 beta 阶段继续观察。
 
 当前限制：
 
 - 去重和错误记录是内存级，服务重启后会丢失。
 - 还没有飞书 encrypt key 解密和请求签名校验。
 - 还没有真正的 rate limit，只有限制入口队列长度。
-- 还没有真正的 interactive card update，目前是追加发送更新后的 markdown 任务卡。
+- interactive card update 已完成本地和请求形态测试，但还没有真实 beta 群验收证据。
 - 还没有根据 reply/thread/message_id 绑定原任务卡。
 
 ## 安全边界
