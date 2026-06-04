@@ -83,7 +83,7 @@ Stage 2B 剩余：
 - 填飞书 app_id / app_secret
 - 填 `send_allowlist`
 - 填 `verification_token`
-- 准备公网 callback 地址
+- callback 模式准备公网 callback 地址；long_connection 模式准备长链接 SDK 事件绑定
 - 在飞书开放平台配置事件订阅
 - 真实 beta 群发消息后验证任务卡出现
 

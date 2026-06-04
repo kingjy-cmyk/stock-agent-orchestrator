@@ -19,8 +19,6 @@ ENV_FIELDS: tuple[tuple[str, str], ...] = (
     ("feishu.analyst_open_id", "FEISHU_ANALYST_OPEN_ID"),
     ("feishu.app_id", "FEISHU_APP_ID"),
     ("feishu.app_secret", "FEISHU_APP_SECRET"),
-    ("feishu.verification_token", "FEISHU_VERIFICATION_TOKEN"),
-    ("feishu.encrypt_key", "FEISHU_ENCRYPT_KEY"),
 )
 
 SENSITIVE_ENV_NAMES = {
@@ -40,6 +38,7 @@ ENV_DEFAULTS = {
     "FEISHU_ANALYST_OPEN_ID": "ou_xiaoba_beta",
     "FEISHU_APP_ID": "cli_xxx",
     "FEISHU_APP_SECRET": "<secret>",
+    "FEISHU_EVENT_MODE": "long_connection",
     "FEISHU_VERIFICATION_TOKEN": "<token>",
     "FEISHU_ENCRYPT_KEY": "<encrypt-key>",
     "FEISHU_WEBHOOK_RATE_LIMIT_PER_MINUTE": "60",
@@ -164,6 +163,9 @@ def render_beta_live_env_template(*, shell: str = "powershell") -> str:
     ]
     for _field, env_name in ENV_FIELDS:
         lines.append(_env_line(shell=normalized, env_name=env_name, value=ENV_DEFAULTS[env_name]))
+    lines.append(_env_line(shell=normalized, env_name="FEISHU_EVENT_MODE", value=ENV_DEFAULTS["FEISHU_EVENT_MODE"]))
+    lines.append(_env_line(shell=normalized, env_name="FEISHU_VERIFICATION_TOKEN", value=ENV_DEFAULTS["FEISHU_VERIFICATION_TOKEN"]))
+    lines.append(_env_line(shell=normalized, env_name="FEISHU_ENCRYPT_KEY", value=ENV_DEFAULTS["FEISHU_ENCRYPT_KEY"]))
     lines.append(_env_line(shell=normalized, env_name="FEISHU_WEBHOOK_RATE_LIMIT_PER_MINUTE", value=ENV_DEFAULTS["FEISHU_WEBHOOK_RATE_LIMIT_PER_MINUTE"]))
     return "\n".join(lines)
 
@@ -171,6 +173,9 @@ def render_beta_live_env_template(*, shell: str = "powershell") -> str:
 def _render_config(env: Mapping[str, str]) -> str:
     rate_limit = str(env.get("FEISHU_WEBHOOK_RATE_LIMIT_PER_MINUTE", "60")).strip() or "60"
     sqlite_db = str(env.get("STOCK_AGENT_SQLITE_DB", "./runtime/beta-live.db")).strip()
+    event_mode = str(env.get("FEISHU_EVENT_MODE", "long_connection")).strip() or "long_connection"
+    verification_token = str(env.get("FEISHU_VERIFICATION_TOKEN", "")).strip()
+    encrypt_key = str(env.get("FEISHU_ENCRYPT_KEY", "")).strip()
     return "\n".join(
         [
             "[project]",
@@ -200,12 +205,13 @@ def _render_config(env: Mapping[str, str]) -> str:
             f'data_open_id = "{_toml_escape(env["FEISHU_DATA_OPEN_ID"])}"',
             f'analyst_open_id = "{_toml_escape(env["FEISHU_ANALYST_OPEN_ID"])}"',
             'send_mode = "live"',
+            f'event_mode = "{_toml_escape(event_mode)}"',
             'api_base_url = "https://open.feishu.cn"',
             f'app_id = "{_toml_escape(env["FEISHU_APP_ID"])}"',
             f'app_secret = "{_toml_escape(env["FEISHU_APP_SECRET"])}"',
             f'send_allowlist = ["{_toml_escape(env["FEISHU_GROUP_CHAT_ID"])}"]',
-            f'verification_token = "{_toml_escape(env["FEISHU_VERIFICATION_TOKEN"])}"',
-            f'encrypt_key = "{_toml_escape(env["FEISHU_ENCRYPT_KEY"])}"',
+            f'verification_token = "{_toml_escape(verification_token)}"',
+            f'encrypt_key = "{_toml_escape(encrypt_key)}"',
             f"webhook_rate_limit_per_minute = {int(rate_limit)}",
             "",
         ]

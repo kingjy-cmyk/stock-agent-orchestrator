@@ -28,12 +28,12 @@ stock-agent-orchestrator beta-live-runbook --config configs/beta.live.toml --cal
 4. 运行 `beta-live-config-status`，确认没有占位符且 secret 已脱敏显示。
 5. 运行 `beta-live-runbook`。
 6. 运行 `beta-live-launch-packet`，生成飞书开放平台填写项、首轮测试消息和证据清单。
-7. 运行 `beta-callback-deploy-plan`，确认公网 callback、飞书事件订阅 URL、本地监听和探测命令一致。
+7. callback 模式运行 `beta-callback-deploy-plan`；long_connection 模式运行 `run-long-connection --dry-run`。
 8. 运行 `beta-live-message-script`，确认首轮消息、截图点和失败判据。
 9. 运行 `beta-live-final-gate`，确认最终 stage 为 `ready_to_execute_real_beta_validation`。
 10. 如果 final gate 允许开始，再启动 `run-webhook --allow-live-send`。
-11. 运行 `beta-callback-probe`。
-12. 在飞书开放平台配置事件订阅 webhook URL。
+11. callback 模式运行 `beta-callback-probe`；long_connection 模式确认长链接接收器启动成功。
+12. 在飞书开放平台配置对应事件订阅模式。
 13. 在 beta 群按 message script 发送首轮消息。
 14. 确认任务卡出现并可被后续消息原地更新。
 15. 运行 `collect-beta-evidence` 生成验证报告。
@@ -43,6 +43,7 @@ stock-agent-orchestrator beta-live-runbook --config configs/beta.live.toml --cal
 
 - `beta-live-runbook` 显示 `ready_to_start: false`。
 - `beta-callback-deploy-plan` 显示 `ok: false`。
+- long_connection 模式下 `run-long-connection --dry-run` 失败。
 - `beta-live-message-script` 中任一前置命令失败。
 - `beta-live-final-gate` 显示 `ok: false`。
 - `beta-callback-probe` 失败。

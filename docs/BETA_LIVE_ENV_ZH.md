@@ -25,6 +25,14 @@ stock-agent-orchestrator beta-live-intake-checklist --shell powershell --format 
 stock-agent-orchestrator beta-live-env-template --shell powershell
 ```
 
+默认事件接入模式是：
+
+```powershell
+$env:FEISHU_EVENT_MODE="long_connection"
+```
+
+长链接模式不需要公网 callback；callback 模式再把该值改成 `callback`，并填写 `FEISHU_VERIFICATION_TOKEN` / `FEISHU_ENCRYPT_KEY`。
+
 ```powershell
 $env:STOCK_AGENT_CANDIDATE_LIST="C:\path\to\candidate_list.md"
 $env:STOCK_AGENT_SEVEN_LAYER_REPORTS="C:\path\to\seven_layer"

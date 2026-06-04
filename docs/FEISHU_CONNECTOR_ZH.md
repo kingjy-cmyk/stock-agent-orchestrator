@@ -53,8 +53,10 @@ Feishu Gateway
 - `send_card`：发送带 `config.update_multi=true` 的飞书 interactive card。
 - `update_card`：通过 `message_id` 更新已发送的飞书 interactive card。
 - `FeishuWebhookGateway`：本地 event callback gateway 骨架。
+- `FeishuLongConnectionRuntime`：长链接模式 runtime 骨架，复用同一套 gateway / worker / operation。
 - `SQLiteGatewayStateStore`：持久化 gateway counters、去重 key 和 operation errors。
 - `run-webhook`：本地 HTTP webhook service。
+- `run-long-connection --dry-run`：长链接模式本地检查，不需要公网 callback。
 - `BetaOrchestratorService`：处理 beta 群消息并生成任务卡。
 - `BoundedIngressQueue`：按实例隔离的有界入口队列。
 - `beta-smoke`：不触达真实飞书的 smoke test。
@@ -111,6 +113,21 @@ stock-agent-orchestrator run-webhook --config configs/beta.live.example.toml --a
 stock-agent-orchestrator beta-live-preflight --config configs/beta.live.toml --callback-url https://your-public-domain.example
 ```
 
+如果使用飞书长链接模式：
+
+```toml
+[feishu]
+event_mode = "long_connection"
+```
+
+长链接模式不需要公网 callback：
+
+```bash
+stock-agent-orchestrator run-long-connection --config configs/beta.live.toml --db .runtime/long-connection.db --dry-run --format markdown
+```
+
+当前 `run-long-connection --dry-run` 已能验证配置和 gateway/worker/state store 初始化。真实运行还需要安装并接入飞书长链接 SDK，将 SDK 收到的事件转交给 `FeishuLongConnectionRuntime.handle_event_payload()`。
+
 详细步骤见：[飞书 Beta Live Preflight](BETA_LIVE_PREFLIGHT_ZH.md)。
 
 ## 下一步真实接入
@@ -118,7 +135,7 @@ stock-agent-orchestrator beta-live-preflight --config configs/beta.live.toml --c
 真实连接器应按这个顺序做：
 
 1. 建 `FeishuGateway`，只接 beta 群。
-2. webhook 收到消息后只做解析和入队。
+2. callback 模式由 webhook 收到消息后解析入队；long_connection 模式由 SDK 收到消息后解析入队。
 3. worker 从 `BoundedIngressQueue` 拉取事件。
 4. 调用 `BetaOrchestratorService` 建任务和发送任务卡。
 5. 限频、去重、错误记录。

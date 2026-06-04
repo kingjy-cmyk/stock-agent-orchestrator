@@ -4,7 +4,10 @@
 
 `beta-live-preflight` 是进入真实飞书 beta 群前的硬性准入检查。
 
-它不会连接真实飞书，也不会发送消息。它只判断当前配置和公网 callback 是否已经满足主动 beta 验证的最低条件。
+它不会连接真实飞书，也不会发送消息。它会根据 `feishu.event_mode` 判断接入方式：
+
+- `callback`：检查公网 HTTPS callback。
+- `long_connection`：不要求公网 callback，只检查长链接模式配置。
 
 ## 使用方式
 
@@ -68,7 +71,8 @@ stock-agent-orchestrator beta-live-preflight --config configs/beta.live.toml --c
 - `feishu.verification_token` 已配置，用于飞书 callback token 校验。
 - `feishu.encrypt_key` 已配置，用于 `X-Lark-Signature` 请求签名校验和 encrypt payload 解密。
 - `feishu.webhook_rate_limit_per_minute > 0`。
-- callback URL 是公网 `https`。
+- callback 模式下 callback URL 是公网 `https`。
+- long_connection 模式下不需要公网 callback。
 
 ## 通过后怎么做
 
@@ -78,13 +82,19 @@ preflight 通过后，再启动真实发送服务：
 stock-agent-orchestrator run-webhook --config configs/beta.live.toml --allow-live-send
 ```
 
-启动后先探测公网 callback：
+callback 模式启动后先探测公网 callback：
 
 ```bash
 stock-agent-orchestrator beta-callback-probe --config configs/beta.live.toml --callback-url https://your-public-domain.example --format markdown
 ```
 
 把 preflight 输出里的 `webhook_url` 填到飞书开放平台事件订阅 callback。
+
+long_connection 模式使用：
+
+```bash
+stock-agent-orchestrator run-long-connection --config configs/beta.live.toml --db .runtime/long-connection.db --dry-run --format markdown
+```
 
 然后在 beta 群发一条最小委托：
 

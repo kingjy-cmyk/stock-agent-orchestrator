@@ -24,8 +24,12 @@ REQUIRED_BETA_LIVE_FIELDS = (
     "feishu.owner_open_id",
     "feishu.data_open_id",
     "feishu.analyst_open_id",
+    "feishu.event_mode",
     "feishu.app_id",
     "feishu.app_secret",
+)
+
+CALLBACK_BETA_LIVE_FIELDS = (
     "feishu.verification_token",
     "feishu.encrypt_key",
 )
@@ -70,16 +74,17 @@ def inspect_beta_live_config(*, config_path: Path, repo_root: Path = Path(".")) 
             validation_issues = [ConfigValidationIssue("error", "config", f"failed to parse config: {exc}")]
             field_statuses = [
                 BetaLiveFieldStatus(field=field, status="unreadable", value="<config parse failed>", sensitive=field in SENSITIVE_FIELDS)
-                for field in REQUIRED_BETA_LIVE_FIELDS
+                for field in (*REQUIRED_BETA_LIVE_FIELDS, *CALLBACK_BETA_LIVE_FIELDS)
             ]
         else:
             validation_issues = validate_config(config)
             flattened = flatten_config(config)
-            field_statuses = [_field_status(field, flattened.get(field)) for field in REQUIRED_BETA_LIVE_FIELDS]
+            required_fields = _required_fields_for_event_mode(config.feishu.event_mode)
+            field_statuses = [_field_status(field, flattened.get(field)) for field in required_fields]
     else:
         field_statuses = [
             BetaLiveFieldStatus(field=field, status="missing_config", value="<config file missing>", sensitive=field in SENSITIVE_FIELDS)
-            for field in REQUIRED_BETA_LIVE_FIELDS
+            for field in (*REQUIRED_BETA_LIVE_FIELDS, *CALLBACK_BETA_LIVE_FIELDS)
         ]
 
     ready_for_preflight = bool(
@@ -145,6 +150,12 @@ def _field_status(field: str, value: Any) -> BetaLiveFieldStatus:
             return BetaLiveFieldStatus(field=field, status="placeholder", value=json.dumps(value, ensure_ascii=False), sensitive=sensitive)
         return BetaLiveFieldStatus(field=field, status="filled", value=json.dumps(value, ensure_ascii=False), sensitive=sensitive)
     return BetaLiveFieldStatus(field=field, status="filled", value=str(value), sensitive=sensitive)
+
+
+def _required_fields_for_event_mode(event_mode: str) -> tuple[str, ...]:
+    if event_mode == "callback":
+        return (*REQUIRED_BETA_LIVE_FIELDS, *CALLBACK_BETA_LIVE_FIELDS)
+    return REQUIRED_BETA_LIVE_FIELDS
 
 
 def _is_gitignored(*, config_path: Path, repo_root: Path) -> bool:

@@ -62,6 +62,7 @@ class BetaLiveConfigFromEnvTests(unittest.TestCase):
             self.assertTrue(result.written)
             self.assertTrue(result.ready_for_preflight)
             self.assertEqual(config.feishu.group_chat_id, "oc_beta_chat")
+            self.assertEqual(config.feishu.event_mode, "long_connection")
             self.assertEqual(config.feishu.send_allowlist, ["oc_beta_chat"])
             self.assertNotIn("secret-value", rendered)
             self.assertNotIn("verify-token-secret", rendered)
@@ -72,6 +73,7 @@ class BetaLiveConfigFromEnvTests(unittest.TestCase):
 
         self.assertIn("$env:FEISHU_APP_ID", rendered)
         self.assertIn("$env:FEISHU_APP_SECRET", rendered)
+        self.assertIn("$env:FEISHU_EVENT_MODE", rendered)
         self.assertIn("beta-live-config-from-env", rendered)
 
     def test_renders_bash_env_template(self) -> None:
@@ -79,6 +81,7 @@ class BetaLiveConfigFromEnvTests(unittest.TestCase):
 
         self.assertIn("export FEISHU_APP_ID", rendered)
         self.assertIn("export FEISHU_APP_SECRET", rendered)
+        self.assertIn("export FEISHU_EVENT_MODE", rendered)
         self.assertIn("beta-live-config-from-env", rendered)
 
     def _env(self) -> dict[str, str]:
@@ -93,6 +96,7 @@ class BetaLiveConfigFromEnvTests(unittest.TestCase):
             "FEISHU_ANALYST_OPEN_ID": "ou_analyst",
             "FEISHU_APP_ID": "cli_a_real_app",
             "FEISHU_APP_SECRET": "secret-value",
+            "FEISHU_EVENT_MODE": "long_connection",
             "FEISHU_VERIFICATION_TOKEN": "verify-token-secret",
             "FEISHU_ENCRYPT_KEY": "encrypt-key-secret",
             "FEISHU_WEBHOOK_RATE_LIMIT_PER_MINUTE": "60",

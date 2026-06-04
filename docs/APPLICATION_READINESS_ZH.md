@@ -53,12 +53,12 @@ stock-agent-orchestrator application-readiness --format markdown
 9. 运行 `beta-live-runbook`，生成真实 beta 群操作手册和停止条件。
 10. 运行 `beta-live-launch-packet`，生成飞书开放平台填写项、首轮测试消息和证据清单。
 11. 运行 `beta-live-readiness-bundle`，确认总检查阶段为 `ready_for_real_beta_group_validation`。
-12. 运行 `beta-callback-deploy-plan`，确认公网 callback、飞书事件订阅 URL、本地监听和探测命令一致。
+12. callback 模式运行 `beta-callback-deploy-plan`；long_connection 模式运行 `run-long-connection --dry-run`。
 13. 运行 `beta-live-evidence-rehearsal`，彩排证据收集和报告生成链路。
 14. 运行 `beta-live-message-script`，确认真实 beta 群首轮消息、截图点和失败判据。
 15. 运行 `beta-live-final-gate`，确认最终 stage 为 `ready_to_execute_real_beta_validation`。
 16. 启动 `run-webhook --allow-live-send`。
-17. 运行 `beta-callback-probe`，确认公网 `/healthz` 和 `/webhook` challenge 可用。
+17. callback 模式运行 `beta-callback-probe`；long_connection 模式确认长链接接收器启动成功。
 18. 在 beta 群按 message script 发送首轮消息。
 19. 运行 `collect-beta-evidence`，自动保存 `/healthz` 到 `.runtime/healthz.json` 并生成 `docs/BETA_VALIDATION_REPORT_ZH.md`。
 20. 补任务卡截图或录屏路径。
@@ -115,6 +115,10 @@ stock-agent-orchestrator beta-live-readiness-bundle --config configs/beta.live.t
 
 ```bash
 stock-agent-orchestrator beta-callback-deploy-plan --callback-url https://your-public-domain.example --format markdown
+```
+
+```bash
+stock-agent-orchestrator run-long-connection --config configs/beta.live.toml --db .runtime/long-connection.db --dry-run --format markdown
 ```
 
 ```bash

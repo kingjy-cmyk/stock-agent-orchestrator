@@ -9,6 +9,12 @@ from stock_agent_orchestrator.bridges.current_stack import CurrentStackBridge
 from stock_agent_orchestrator.config import config_to_dict, load_config, validate_config, validation_to_dict
 from stock_agent_orchestrator.connectors.feishu import FakeFeishuClient, FeishuMessageEvent
 from stock_agent_orchestrator.connectors.feishu_http import build_webhook_server_from_config
+from stock_agent_orchestrator.connectors.feishu_long_connection import (
+    build_long_connection_runtime_from_config,
+    build_long_connection_runtime_status,
+    long_connection_runtime_status_to_dict,
+    long_connection_runtime_status_to_markdown,
+)
 from stock_agent_orchestrator.connectors.feishu_webhook import FeishuWebhookGateway
 from stock_agent_orchestrator.domain.models import AgentRole, TaskIntent
 from stock_agent_orchestrator.persistence.sqlite_store import SQLiteTaskStore
@@ -234,7 +240,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     beta_live_preflight = sub.add_parser("beta-live-preflight")
     beta_live_preflight.add_argument("--config", default="configs/beta.live.toml")
-    beta_live_preflight.add_argument("--callback-url", required=True)
+    beta_live_preflight.add_argument("--callback-url", default="")
     beta_live_preflight.add_argument("--format", choices=["json", "markdown"], default="json")
 
     beta_live_prep_dry_run = sub.add_parser("beta-live-prep-dry-run")
@@ -244,7 +250,7 @@ def build_parser() -> argparse.ArgumentParser:
     beta_live_runbook = sub.add_parser("beta-live-runbook")
     beta_live_runbook.add_argument("--repo-root", default=".")
     beta_live_runbook.add_argument("--config", default="configs/beta.live.toml")
-    beta_live_runbook.add_argument("--callback-url", required=True)
+    beta_live_runbook.add_argument("--callback-url", default="")
     beta_live_runbook.add_argument("--db", default=".runtime/webhook.db")
     beta_live_runbook.add_argument("--healthz-json", default=".runtime/healthz.json")
     beta_live_runbook.add_argument("--report-output", default="docs/BETA_VALIDATION_REPORT_ZH.md")
@@ -253,7 +259,7 @@ def build_parser() -> argparse.ArgumentParser:
     beta_live_launch_packet = sub.add_parser("beta-live-launch-packet")
     beta_live_launch_packet.add_argument("--repo-root", default=".")
     beta_live_launch_packet.add_argument("--config", default="configs/beta.live.toml")
-    beta_live_launch_packet.add_argument("--callback-url", required=True)
+    beta_live_launch_packet.add_argument("--callback-url", default="")
     beta_live_launch_packet.add_argument("--db", default=".runtime/webhook.db")
     beta_live_launch_packet.add_argument("--healthz-json", default=".runtime/healthz.json")
     beta_live_launch_packet.add_argument("--report-output", default="docs/BETA_VALIDATION_REPORT_ZH.md")
@@ -262,7 +268,7 @@ def build_parser() -> argparse.ArgumentParser:
     beta_live_readiness_bundle = sub.add_parser("beta-live-readiness-bundle")
     beta_live_readiness_bundle.add_argument("--repo-root", default=".")
     beta_live_readiness_bundle.add_argument("--config", default="configs/beta.live.toml")
-    beta_live_readiness_bundle.add_argument("--callback-url", required=True)
+    beta_live_readiness_bundle.add_argument("--callback-url", default="")
     beta_live_readiness_bundle.add_argument("--db", default=".runtime/webhook.db")
     beta_live_readiness_bundle.add_argument("--healthz-json", default=".runtime/healthz.json")
     beta_live_readiness_bundle.add_argument("--report-output", default="docs/BETA_VALIDATION_REPORT_ZH.md")
@@ -281,7 +287,7 @@ def build_parser() -> argparse.ArgumentParser:
     beta_live_final_gate = sub.add_parser("beta-live-final-gate")
     beta_live_final_gate.add_argument("--repo-root", default=".")
     beta_live_final_gate.add_argument("--config", default="configs/beta.live.toml")
-    beta_live_final_gate.add_argument("--callback-url", required=True)
+    beta_live_final_gate.add_argument("--callback-url", default="")
     beta_live_final_gate.add_argument("--db", default=".runtime/webhook.db")
     beta_live_final_gate.add_argument("--healthz-json", default=".runtime/healthz.json")
     beta_live_final_gate.add_argument("--report-output", default="docs/BETA_VALIDATION_REPORT_ZH.md")
@@ -334,7 +340,7 @@ def build_parser() -> argparse.ArgumentParser:
     beta_validation_guide = sub.add_parser("beta-validation-guide")
     beta_validation_guide.add_argument("--repo-root", default=".")
     beta_validation_guide.add_argument("--config", default="configs/beta.live.toml")
-    beta_validation_guide.add_argument("--callback-url", required=True)
+    beta_validation_guide.add_argument("--callback-url", default="")
     beta_validation_guide.add_argument("--db", default=".runtime/beta-live.db")
     beta_validation_guide.add_argument("--healthz-json", default=".runtime/healthz.json")
     beta_validation_guide.add_argument("--report-output", default="docs/BETA_VALIDATION_REPORT_ZH.md")
@@ -398,6 +404,13 @@ def build_parser() -> argparse.ArgumentParser:
     run_webhook.add_argument("--port", type=int, default=8787)
     run_webhook.add_argument("--max-per-instance", type=int, default=1024)
     run_webhook.add_argument("--allow-live-send", action="store_true")
+
+    run_long_connection = sub.add_parser("run-long-connection")
+    run_long_connection.add_argument("--config", default="configs/beta.live.toml")
+    run_long_connection.add_argument("--db", default=".runtime/long-connection.db")
+    run_long_connection.add_argument("--allow-live-send", action="store_true")
+    run_long_connection.add_argument("--dry-run", action="store_true")
+    run_long_connection.add_argument("--format", choices=["json", "markdown"], default="markdown")
 
     return parser
 
@@ -1112,6 +1125,33 @@ def main() -> None:
             pass
         finally:
             server.server_close()
+        return
+
+    if args.command == "run-long-connection":
+        if args.dry_run:
+            status = build_long_connection_runtime_status(config_path=Path(args.config), db_path=Path(args.db))
+            rendered = (
+                long_connection_runtime_status_to_markdown(status)
+                if args.format == "markdown"
+                else json.dumps(long_connection_runtime_status_to_dict(status), ensure_ascii=False, indent=2)
+            )
+            print(rendered)
+            if not status.ok:
+                raise SystemExit(1)
+            return
+        runtime = build_long_connection_runtime_from_config(
+            config_path=Path(args.config),
+            db_path=Path(args.db),
+            allow_live_send=args.allow_live_send,
+        )
+        print(json.dumps({
+            "ok": True,
+            "mode": "long_connection",
+            "event_mode": runtime.config.feishu.event_mode,
+            "db": args.db,
+            "note": "No public callback URL is required for Feishu long connection mode.",
+        }, ensure_ascii=False, indent=2))
+        runtime.start()
         return
 
 

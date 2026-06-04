@@ -25,6 +25,7 @@ class PreflightCheck:
 class BetaLivePreflightReport:
     ok: bool
     checks: list[PreflightCheck]
+    event_mode: str
     callback_url: str
     webhook_url: str
     healthz_url: str
@@ -57,6 +58,13 @@ def run_beta_live_preflight(config: OrchestratorConfig, *, callback_url: str) ->
         config.feishu.send_mode == "live",
         "feishu.send_mode is live",
         "feishu.send_mode must be live for beta live preflight",
+    )
+    _add_check(
+        checks,
+        "event_mode",
+        config.feishu.event_mode in {"callback", "long_connection"},
+        f"feishu.event_mode is {config.feishu.event_mode}",
+        "feishu.event_mode must be callback or long_connection",
     )
     _add_check(
         checks,
@@ -100,11 +108,12 @@ def run_beta_live_preflight(config: OrchestratorConfig, *, callback_url: str) ->
         )
     )
 
+    event_mode = config.feishu.event_mode
     callback = callback_url.strip().rstrip("/")
-    callback_ok, callback_message = _validate_callback_url(callback)
+    callback_ok, callback_message = _validate_callback_url(callback, event_mode=event_mode)
     checks.append(
         PreflightCheck(
-            name="callback_url",
+            name="callback_url" if event_mode == "callback" else "long_connection_transport",
             status="pass" if callback_ok else "fail",
             message=callback_message,
         )
@@ -123,9 +132,10 @@ def run_beta_live_preflight(config: OrchestratorConfig, *, callback_url: str) ->
     return BetaLivePreflightReport(
         ok=ok,
         checks=checks,
+        event_mode=event_mode,
         callback_url=callback,
-        webhook_url=f"{callback}/webhook" if callback else "",
-        healthz_url=f"{callback}/healthz" if callback else "",
+        webhook_url=f"{callback}/webhook" if event_mode == "callback" and callback else "",
+        healthz_url=f"{callback}/healthz" if event_mode == "callback" and callback else "/healthz",
         config=config_to_dict(config),
         config_issues=validation_to_dict(config_issues),
         next_steps=_next_steps(ok),
@@ -141,6 +151,7 @@ def preflight_report_to_markdown(report: BetaLivePreflightReport) -> str:
         "# Feishu Beta Live Preflight",
         "",
         f"- ok: `{str(report.ok).lower()}`",
+        f"- event_mode: `{report.event_mode}`",
         f"- callback_url: `{report.callback_url or '<missing>'}`",
         f"- webhook_url: `{report.webhook_url or '<missing>'}`",
         f"- healthz_url: `{report.healthz_url or '<missing>'}`",
@@ -171,9 +182,9 @@ def _required_placeholder_fields(config: OrchestratorConfig) -> list[str]:
         "feishu.analyst_open_id",
         "feishu.app_id",
         "feishu.app_secret",
-        "feishu.verification_token",
-        "feishu.encrypt_key",
     }
+    if config.feishu.event_mode == "callback":
+        required.update({"feishu.verification_token", "feishu.encrypt_key"})
     fields = flatten_config(config)
     result: list[str] = []
     for field in sorted(required):
@@ -183,7 +194,9 @@ def _required_placeholder_fields(config: OrchestratorConfig) -> list[str]:
     return result
 
 
-def _validate_callback_url(callback_url: str) -> tuple[bool, str]:
+def _validate_callback_url(callback_url: str, *, event_mode: str) -> tuple[bool, str]:
+    if event_mode == "long_connection":
+        return True, "long connection mode does not require a public callback URL"
     if not callback_url:
         return False, "callback URL is required"
     parsed = urlparse(callback_url)
@@ -201,8 +214,9 @@ def _next_steps(ok: bool) -> list[str]:
             "Run beta-live-preflight again with the same config and callback URL.",
         ]
     return [
-        "Start run-webhook with the same config and --allow-live-send.",
-        "Configure Feishu event subscription callback to the reported webhook_url.",
+        "Start the selected Feishu ingress with the same config and --allow-live-send.",
+        "For callback mode, configure Feishu event subscription callback to the reported webhook_url.",
+        "For long_connection mode, start the long-connection receiver instead of exposing a public callback.",
         "Send one beta group @小C-beta delegation and verify a task card appears.",
         "Check healthz after the message; duplicate_count and operation_error_count should stay controlled.",
     ]

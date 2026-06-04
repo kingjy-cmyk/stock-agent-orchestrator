@@ -33,6 +33,7 @@ class BetaLiveControlPanel:
     next_action: str
     readiness_score: int
     readiness_band: str
+    event_mode: str
     callback_url: str
     config_path: str
     task_id: str
@@ -96,7 +97,8 @@ def build_beta_live_control_panel(
         readiness_bundle_ok=readiness_bundle.ok,
         final_gate_ok=final_gate.ok,
     )
-    next_action = _next_action(stage=stage)
+    event_mode = final_gate.event_mode
+    next_action = _next_action(stage=stage, event_mode=event_mode)
     checks = _checks(
         handoff_ok=handoff.ok,
         config_review_ok=config_review.ok,
@@ -110,6 +112,7 @@ def build_beta_live_control_panel(
         next_action=next_action,
         readiness_score=readiness.score,
         readiness_band=readiness.band,
+        event_mode=event_mode,
         callback_url=callback_url,
         config_path=_path_text(str(config_path)),
         task_id=normalized_task_id,
@@ -117,6 +120,7 @@ def build_beta_live_control_panel(
         checks=checks,
         commands=_commands(
             stage=stage,
+            event_mode=event_mode,
             callback_url=callback_url,
             config_path=_path_text(str(config_path)),
             db_path=db_path,
@@ -148,6 +152,7 @@ def beta_live_control_panel_to_markdown(panel: BetaLiveControlPanel) -> str:
         f"- stage: `{panel.stage}`",
         f"- next_action: `{panel.next_action}`",
         f"- readiness: `{panel.readiness_score}/100` `{panel.readiness_band}`",
+        f"- event_mode: `{panel.event_mode}`",
         f"- config_path: `{panel.config_path}`",
         f"- callback_url: `{panel.callback_url}`",
         f"- task_id: `{panel.task_id}`",
@@ -184,13 +189,18 @@ def _stage(*, report_exists: bool, config_review_ok: bool, readiness_bundle_ok: 
     return "ready_to_start_real_beta_execution"
 
 
-def _next_action(*, stage: str) -> str:
+def _next_action(*, stage: str, event_mode: str) -> str:
+    ready_action = (
+        "start_long_connection_then_send_beta_messages"
+        if event_mode == "long_connection"
+        else "start_webhook_probe_callback_then_send_beta_messages"
+    )
     mapping = {
         "real_beta_evidence_present": "rerun_application_readiness_and_prepare_application",
         "collect_or_fix_real_beta_config": "fill_or_review_configs_beta_live_toml",
         "fix_beta_readiness_bundle": "run_readiness_bundle_and_fix_failed_gate",
         "fix_beta_final_gate": "run_final_gate_and_fix_failed_gate",
-        "ready_to_start_real_beta_execution": "start_webhook_probe_callback_then_send_beta_messages",
+        "ready_to_start_real_beta_execution": ready_action,
     }
     return mapping[stage]
 
@@ -219,6 +229,7 @@ def _check(name: str, ok: bool, pass_message: str, fail_message: str) -> dict[st
 def _commands(
     *,
     stage: str,
+    event_mode: str,
     callback_url: str,
     config_path: str,
     db_path: str,
@@ -232,18 +243,27 @@ def _commands(
     if stage == "real_beta_evidence_present":
         return ["stock-agent-orchestrator application-readiness --format markdown"]
     if stage == "collect_or_fix_real_beta_config":
+        callback_arg = f" --callback-url {callback_url}" if callback_url else ""
         return [
-            f"stock-agent-orchestrator beta-live-handoff --shell {shell} --callback-url {callback_url} --task-id {task_id} --format markdown",
+            f"stock-agent-orchestrator beta-live-handoff --shell {shell}{callback_arg} --task-id {task_id} --format markdown",
             f"stock-agent-orchestrator beta-live-env-template --shell {shell}",
-            f"stock-agent-orchestrator beta-live-config-review --config {config_path} --callback-url {callback_url} --shell {shell} --format markdown",
+            f"stock-agent-orchestrator beta-live-config-review --config {config_path}{callback_arg} --shell {shell} --format markdown",
         ]
     if stage == "fix_beta_readiness_bundle":
+        callback_arg = f" --callback-url {callback_url}" if callback_url else ""
         return [
-            f"stock-agent-orchestrator beta-live-readiness-bundle --config {config_path} --callback-url {callback_url} --db {db_path} --healthz-json {healthz_json_path} --report-output {report_path} --format markdown",
+            f"stock-agent-orchestrator beta-live-readiness-bundle --config {config_path}{callback_arg} --db {db_path} --healthz-json {healthz_json_path} --report-output {report_path} --format markdown",
         ]
     if stage == "fix_beta_final_gate":
+        callback_arg = f" --callback-url {callback_url}" if callback_url else ""
         return [
-            f"stock-agent-orchestrator beta-live-final-gate --config {config_path} --callback-url {callback_url} --db {db_path} --healthz-json {healthz_json_path} --report-output {report_path} --host {host} --port {port} --task-id {task_id} --shell {shell} --format markdown",
+            f"stock-agent-orchestrator beta-live-final-gate --config {config_path}{callback_arg} --db {db_path} --healthz-json {healthz_json_path} --report-output {report_path} --host {host} --port {port} --task-id {task_id} --shell {shell} --format markdown",
+        ]
+    if event_mode == "long_connection":
+        return [
+            f"stock-agent-orchestrator run-long-connection --config {config_path} --db {db_path} --allow-live-send",
+            f"stock-agent-orchestrator beta-live-message-script --task-id {task_id} --format markdown",
+            f"stock-agent-orchestrator collect-beta-evidence --config {config_path} --callback-url long_connection --db {db_path} --task-id {task_id} --healthz-json {healthz_json_path} --report-output {report_path} --commit <commit>",
         ]
     return [
         f"stock-agent-orchestrator run-webhook --config {config_path} --db {db_path} --host {host} --port {port} --allow-live-send",
@@ -255,7 +275,7 @@ def _commands(
 
 def _stop_conditions() -> list[str]:
     return [
-        "control panel 不会联网、不启动 webhook、不发送飞书消息。",
+        "control panel 不会联网、不启动 webhook、不启动长链接、不发送飞书消息。",
         "stage 不是 ready_to_start_real_beta_execution 时不要启动 --allow-live-send。",
         "目标群不是临时 beta 群时停止。",
         "任何 secret 出现在公开输出、GitHub 或群聊时停止并轮换。",

@@ -2,7 +2,7 @@
 
 `beta-live-launch-packet` 用来生成真实 beta 群启动包。
 
-它不会启动 webhook，也不会发送飞书消息。它读取真实 beta 配置和公网 callback URL，然后输出：
+它不会启动 webhook，也不会发送飞书消息。它读取真实 beta 配置和事件接入信息，然后输出：
 
 - 飞书开放平台需要填写的 callback 和事件订阅信息。
 - beta 群隔离状态。
@@ -41,6 +41,7 @@ stock-agent-orchestrator beta-live-launch-packet --config configs/beta.live.toml
 - 任务卡只发到 beta 群。
 - 小智-beta / 小巴-beta 能更新同一张任务卡。
 - `collect-beta-evidence` 生成 `docs/BETA_VALIDATION_REPORT_ZH.md`。
+- 长链接模式不需要公网 callback；callback 模式才需要公网 URL。
 
 ## 安全边界
 

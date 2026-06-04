@@ -41,6 +41,7 @@
 - [中文产品介绍](docs/INTRO_ZH.md)
 - [飞书优先原则](docs/FEISHU_FIRST_ZH.md)
 - [飞书连接器架构](docs/FEISHU_CONNECTOR_ZH.md)
+- [飞书长链接模式](docs/FEISHU_LONG_CONNECTION_ZH.md)
 - [Codex 飞书通道对标矩阵](docs/CODEX_FEISHU_PARITY_ZH.md)
 - [长线推进任务](docs/LONG_RUNNING_TASK_ZH.md)
 - [运行前提与最小配置](docs/PREREQUISITES_ZH.md)
@@ -71,7 +72,7 @@ Current status:
 
 - local install/demo/smoke paths are documented
 - Feishu connector has a safe beta preflight gate
-- 131 unit tests pass locally
+- 135 unit tests pass locally
 - real Feishu beta validation is still pending
 
 Current readiness can be checked by command:
@@ -279,6 +280,12 @@ Before touching a real beta group, run the stricter live preflight gate:
 stock-agent-orchestrator beta-live-control-panel --callback-url https://your-public-domain.example --task-id BETA-0001 --format markdown
 ```
 
+For Feishu long connection mode, no public callback is required:
+
+```bash
+stock-agent-orchestrator run-long-connection --config configs/beta.live.toml --db .runtime/long-connection.db --dry-run --format markdown
+```
+
 ```bash
 stock-agent-orchestrator beta-live-handoff --shell powershell --callback-url https://your-public-domain.example --task-id BETA-0001 --format markdown
 ```
@@ -396,6 +403,7 @@ Supported sample formats:
 - Beta Live 环境变量配置: [docs/BETA_LIVE_ENV_ZH.md](docs/BETA_LIVE_ENV_ZH.md)
 - 飞书优先原则: [docs/FEISHU_FIRST_ZH.md](docs/FEISHU_FIRST_ZH.md)
 - 飞书连接器架构: [docs/FEISHU_CONNECTOR_ZH.md](docs/FEISHU_CONNECTOR_ZH.md)
+- 飞书长链接模式: [docs/FEISHU_LONG_CONNECTION_ZH.md](docs/FEISHU_LONG_CONNECTION_ZH.md)
 - 飞书 Beta Live Preflight: [docs/BETA_LIVE_PREFLIGHT_ZH.md](docs/BETA_LIVE_PREFLIGHT_ZH.md)
 - Codex 飞书通道对标矩阵: [docs/CODEX_FEISHU_PARITY_ZH.md](docs/CODEX_FEISHU_PARITY_ZH.md)
 - 长线推进任务: [docs/LONG_RUNNING_TASK_ZH.md](docs/LONG_RUNNING_TASK_ZH.md)

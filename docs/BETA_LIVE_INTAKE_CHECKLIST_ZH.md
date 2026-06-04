@@ -34,13 +34,16 @@ stock-agent-orchestrator beta-live-intake-checklist --shell bash --format markdo
 - `小C-beta / 小智-beta / 小巴-beta` 的 `open_id`。
 - 飞书应用 `app_id`。
 - 飞书应用 `app_secret`。
-- 事件订阅 `verification_token`。
-- 事件订阅 `encrypt_key`。
+- 事件接入模式 `event_mode`：`callback` 或 `long_connection`。
+- callback 模式的 `verification_token`。
+- callback 模式的 `encrypt_key`。
 
 ## 核心原则
 
 - 必须使用临时 beta 群，不接当前正式工作流群。
-- `app_secret`、`verification_token`、`encrypt_key` 只能进入环境变量或 ignored 配置文件。
+- 长链接模式不需要公网 callback。
+- `app_secret` 只能进入环境变量或 ignored 配置文件。
+- callback 模式下，`verification_token`、`encrypt_key` 也只能进入环境变量或 ignored 配置文件。
 - `configs/beta.live.toml` 必须先被 `.gitignore` 保护。
 - 不确定 `chat_id` 或 `open_id` 时停止，不继续接入。
 
@@ -64,6 +67,12 @@ stock-agent-orchestrator beta-live-config-from-env --output configs/beta.live.to
 
 ```bash
 stock-agent-orchestrator beta-live-config-status --config configs/beta.live.toml --format markdown
+```
+
+长链接模式先运行：
+
+```bash
+stock-agent-orchestrator run-long-connection --config configs/beta.live.toml --db .runtime/long-connection.db --dry-run --format markdown
 ```
 
 ```bash

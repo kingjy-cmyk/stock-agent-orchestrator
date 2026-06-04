@@ -177,24 +177,34 @@ def _items() -> list[BetaLiveIntakeItem]:
             risk="泄露后应立即在飞书开放平台轮换",
         ),
         BetaLiveIntakeItem(
+            name="Feishu event mode",
+            env_name="FEISHU_EVENT_MODE",
+            source="接入方式选择：callback 或 long_connection",
+            example="long_connection",
+            sensitive=False,
+            required=True,
+            validation="长链接模式不需要公网 callback；callback 模式需要公网 HTTPS",
+            risk="模式选错会导致准入门错误阻断或接错通道",
+        ),
+        BetaLiveIntakeItem(
             name="verification token",
             env_name="FEISHU_VERIFICATION_TOKEN",
-            source="飞书事件订阅 verification token",
+            source="飞书 callback 事件订阅 verification token",
             example="<token>",
             sensitive=True,
-            required=True,
-            validation="callback 校验必须通过",
-            risk="缺失会拒绝真实飞书 callback",
+            required=False,
+            validation="callback 模式必须填写；long_connection 模式可留空",
+            risk="callback 模式缺失会拒绝真实飞书 callback",
         ),
         BetaLiveIntakeItem(
             name="encrypt key",
             env_name="FEISHU_ENCRYPT_KEY",
-            source="飞书事件订阅 encrypt key",
+            source="飞书 callback 事件订阅 encrypt key",
             example="<encrypt-key>",
             sensitive=True,
-            required=True,
-            validation="加密 callback 解密必须通过",
-            risk="缺失会无法处理加密事件",
+            required=False,
+            validation="callback 加密模式必须填写；long_connection 模式可留空",
+            risk="callback 加密模式缺失会无法处理加密事件",
         ),
     ]
 
@@ -203,7 +213,7 @@ def _operator_steps() -> list[str]:
     return [
         "先创建临时 beta 群，不使用当前正式工作流群。",
         "确认 beta 群中只有 BOOS、小C-beta、小智-beta、小巴-beta 和必要测试人员。",
-        "在飞书开放平台准备 beta 应用，并开启消息事件订阅。",
+        "在飞书开放平台准备 beta 应用，并选择 callback 或 long_connection 事件接入方式。",
         "逐项收集 Required Values，不把 secret 粘贴到公开聊天或仓库。",
         "填完环境变量后生成 ignored 的 configs/beta.live.toml。",
     ]
@@ -214,6 +224,7 @@ def _commands(*, shell: str) -> list[str]:
         f"stock-agent-orchestrator beta-live-env-template --shell {shell}",
         "stock-agent-orchestrator beta-live-config-from-env --output configs/beta.live.toml --overwrite --format markdown",
         "stock-agent-orchestrator beta-live-config-status --config configs/beta.live.toml --format markdown",
+        "stock-agent-orchestrator run-long-connection --config configs/beta.live.toml --db .runtime/long-connection.db --dry-run --format markdown",
         "stock-agent-orchestrator beta-live-readiness-bundle --config configs/beta.live.toml --callback-url https://your-public-domain.example --format markdown",
     ]
 
@@ -222,7 +233,7 @@ def _stop_conditions() -> list[str]:
     return [
         "没有临时 beta 群时停止，不要接入正式群。",
         "任何 open_id 或 chat_id 不确定时停止，先核对。",
-        "app_secret、verification_token、encrypt_key 泄露到聊天或仓库时停止并轮换。",
+        "app_secret 以及 callback 模式下的 verification_token、encrypt_key 泄露到聊天或仓库时停止并轮换。",
         "configs/beta.live.toml 未被 .gitignore 保护时停止。",
         "beta-live-config-status 未通过时停止。",
     ]
@@ -233,5 +244,6 @@ def _next_steps() -> list[str]:
         "按 Required Values 收集真实值。",
         "用 beta-live-env-template 生成填写模板。",
         "用 beta-live-config-from-env 写入 ignored 配置。",
+        "长链接模式先通过 run-long-connection --dry-run；callback 模式先通过 callback deploy/probe。",
         "通过 beta-live-readiness-bundle 后再进入真实 beta 群验证。",
     ]

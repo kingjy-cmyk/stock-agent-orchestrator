@@ -4,6 +4,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
+from stock_agent_orchestrator.config import load_config
 from stock_agent_orchestrator.services.beta_callback_deploy_plan import (
     beta_callback_deploy_plan_to_dict,
     build_beta_callback_deploy_plan,
@@ -26,13 +27,14 @@ from stock_agent_orchestrator.services.beta_live_readiness_bundle import (
 class BetaLiveFinalGate:
     ok: bool
     stage: str
+    event_mode: str
     config_path: str
     callback_url: str
     task_id: str
     checks: list[dict[str, str]]
     config_review: dict[str, Any]
     readiness_bundle: dict[str, Any]
-    callback_deploy_plan: dict[str, Any]
+    transport_plan: dict[str, Any]
     message_script: dict[str, Any]
     commands: list[str]
     stop_conditions: list[str]
@@ -52,6 +54,7 @@ def build_beta_live_final_gate(
     port: int = 8787,
     shell: str = "powershell",
 ) -> BetaLiveFinalGate:
+    event_mode = _event_mode(config_path)
     config_review = build_beta_live_config_review(
         repo_root=repo_root,
         config_path=config_path,
@@ -66,7 +69,8 @@ def build_beta_live_final_gate(
         healthz_json_path=healthz_json_path,
         report_path=report_path,
     )
-    deploy_plan = build_beta_callback_deploy_plan(
+    transport_plan = _transport_plan(
+        event_mode=event_mode,
         callback_url=callback_url,
         config_path=str(config_path),
         db_path=db_path,
@@ -75,16 +79,17 @@ def build_beta_live_final_gate(
     )
     message_script = build_beta_live_message_script(task_id=task_id)
     checks = _checks(
+        event_mode=event_mode,
         config_review_ok=config_review.ok,
         readiness_ok=readiness_bundle.ok,
-        deploy_plan_ok=deploy_plan.ok,
+        transport_ok=bool(transport_plan["ok"]),
         message_script_ok=message_script.ok,
     )
     ok = all(item["status"] == "pass" for item in checks)
     stage = _stage(
         config_review_ok=config_review.ok,
         readiness_ok=readiness_bundle.ok,
-        deploy_plan_ok=deploy_plan.ok,
+        transport_ok=bool(transport_plan["ok"]),
         message_script_ok=message_script.ok,
     )
     normalized_task_id = task_id.strip().upper() or "BETA-0001"
@@ -92,16 +97,18 @@ def build_beta_live_final_gate(
     return BetaLiveFinalGate(
         ok=ok,
         stage=stage,
+        event_mode=event_mode,
         config_path=config_path_text,
         callback_url=callback_url,
         task_id=normalized_task_id,
         checks=checks,
         config_review=beta_live_config_review_to_dict(config_review),
         readiness_bundle=beta_live_readiness_bundle_to_dict(readiness_bundle),
-        callback_deploy_plan=beta_callback_deploy_plan_to_dict(deploy_plan),
+        transport_plan=transport_plan,
         message_script=beta_live_message_script_to_dict(message_script),
         commands=_commands(
             ok=ok,
+            event_mode=event_mode,
             config_path=config_path_text,
             callback_url=callback_url,
             db_path=db_path,
@@ -118,7 +125,9 @@ def build_beta_live_final_gate(
 
 
 def beta_live_final_gate_to_dict(gate: BetaLiveFinalGate) -> dict[str, Any]:
-    return asdict(gate)
+    data = asdict(gate)
+    data["callback_deploy_plan"] = gate.transport_plan
+    return data
 
 
 def beta_live_final_gate_to_markdown(gate: BetaLiveFinalGate) -> str:
@@ -127,6 +136,7 @@ def beta_live_final_gate_to_markdown(gate: BetaLiveFinalGate) -> str:
         "",
         f"- ok: `{str(gate.ok).lower()}`",
         f"- stage: `{gate.stage}`",
+        f"- event_mode: `{gate.event_mode}`",
         f"- config_path: `{gate.config_path}`",
         f"- callback_url: `{gate.callback_url}`",
         f"- task_id: `{gate.task_id}`",
@@ -139,7 +149,7 @@ def beta_live_final_gate_to_markdown(gate: BetaLiveFinalGate) -> str:
         [
             f"- config_review: `{gate.config_review['stage']}`",
             f"- readiness_bundle: `{gate.readiness_bundle['stage']}`",
-            f"- callback_deploy_plan: `{gate.callback_deploy_plan['stage']}`",
+            f"- transport_plan: `{gate.transport_plan['stage']}`",
             f"- message_script: `{gate.message_script['stage']}`",
         ]
     )
@@ -155,39 +165,30 @@ def beta_live_final_gate_to_markdown(gate: BetaLiveFinalGate) -> str:
 
 def _checks(
     *,
+    event_mode: str,
     config_review_ok: bool,
     readiness_ok: bool,
-    deploy_plan_ok: bool,
+    transport_ok: bool,
     message_script_ok: bool,
 ) -> list[dict[str, str]]:
     return [
         _check("config_review", config_review_ok, "real beta config review passes", "real beta config review does not pass"),
         _check("readiness_bundle", readiness_ok, "readiness bundle allows real beta validation", "readiness bundle does not allow real beta validation"),
-        _check("callback_deploy_plan", deploy_plan_ok, "callback deployment plan passes", "callback deployment plan does not pass"),
+        _check("transport_plan", transport_ok, f"{event_mode} transport plan passes", f"{event_mode} transport plan does not pass"),
         _check("message_script", message_script_ok, "message script is ready", "message script is not ready"),
     ]
 
 
-def _stage(
-    *,
-    config_review_ok: bool,
-    readiness_ok: bool,
-    deploy_plan_ok: bool,
-    message_script_ok: bool,
-) -> str:
+def _stage(*, config_review_ok: bool, readiness_ok: bool, transport_ok: bool, message_script_ok: bool) -> str:
     if not config_review_ok:
         return "fix_beta_live_config_review"
     if not readiness_ok:
         return "fix_beta_live_readiness_bundle"
-    if not deploy_plan_ok:
-        return "fix_beta_callback_deploy_plan"
+    if not transport_ok:
+        return "fix_beta_transport_plan"
     if not message_script_ok:
         return "fix_beta_live_message_script"
     return "ready_to_execute_real_beta_validation"
-
-
-def _path_text(path: str) -> str:
-    return path.replace("\\", "/")
 
 
 def _check(name: str, ok: bool, pass_message: str, fail_message: str) -> dict[str, str]:
@@ -197,6 +198,7 @@ def _check(name: str, ok: bool, pass_message: str, fail_message: str) -> dict[st
 def _commands(
     *,
     ok: bool,
+    event_mode: str,
     config_path: str,
     callback_url: str,
     db_path: str,
@@ -208,10 +210,21 @@ def _commands(
     shell: str,
 ) -> list[str]:
     if not ok:
+        callback_arg = f" --callback-url {callback_url}" if callback_url else ""
+        commands = [
+            f"stock-agent-orchestrator beta-live-config-review --config {config_path}{callback_arg} --shell {shell} --format markdown",
+            f"stock-agent-orchestrator beta-live-readiness-bundle --config {config_path}{callback_arg} --db {db_path} --healthz-json {healthz_json_path} --report-output {report_path} --format markdown",
+        ]
+        if event_mode == "callback":
+            commands.append(
+                f"stock-agent-orchestrator beta-callback-deploy-plan --callback-url {callback_url} --config {config_path} --db {db_path} --host {host} --port {port} --format markdown"
+            )
+        return commands
+    if event_mode == "long_connection":
         return [
-            f"stock-agent-orchestrator beta-live-config-review --config {config_path} --callback-url {callback_url} --shell {shell} --format markdown",
-            f"stock-agent-orchestrator beta-live-readiness-bundle --config {config_path} --callback-url {callback_url} --db {db_path} --healthz-json {healthz_json_path} --report-output {report_path} --format markdown",
-            f"stock-agent-orchestrator beta-callback-deploy-plan --callback-url {callback_url} --config {config_path} --db {db_path} --host {host} --port {port} --format markdown",
+            f"stock-agent-orchestrator run-long-connection --config {config_path} --db {db_path} --allow-live-send",
+            f"stock-agent-orchestrator beta-live-message-script --task-id {task_id} --format markdown",
+            f"stock-agent-orchestrator collect-beta-evidence --config {config_path} --callback-url long_connection --db {db_path} --task-id {task_id} --healthz-json {healthz_json_path} --report-output {report_path} --commit <commit>",
         ]
     return [
         f"stock-agent-orchestrator run-webhook --config {config_path} --db {db_path} --host {host} --port {port} --allow-live-send",
@@ -226,7 +239,8 @@ def _stop_conditions() -> list[str]:
         "Final gate ok=false 时不要启动 --allow-live-send。",
         "任一子 gate 失败时不要配置飞书事件订阅或发送 beta 群消息。",
         "readiness bundle 未进入 ready_for_real_beta_group_validation 时停止。",
-        "callback_url 不是公网 https 时停止。",
+        "callback 模式下 callback_url 不是公网 https 时停止。",
+        "long_connection 模式下长链接接收器未启动成功时停止。",
         "真实配置未通过 config review 时停止。",
         "任何消息会进入当前正式群时停止。",
         "/healthz 出现 operation_error_count > 0 时停止。",
@@ -237,9 +251,9 @@ def _stop_conditions() -> list[str]:
 def _next_steps(*, ok: bool) -> list[str]:
     if ok:
         return [
-            "Start run-webhook with the generated command.",
-            "Run beta-callback-probe.",
-            "Configure Feishu event subscription to the public /webhook URL.",
+            "Start the generated ingress command.",
+            "Callback mode: run beta-callback-probe and configure public /webhook.",
+            "Long connection mode: start run-long-connection; no public callback is required.",
             "Send beta group messages according to beta-live-message-script.",
             "Run collect-beta-evidence and commit docs/BETA_VALIDATION_REPORT_ZH.md.",
         ]
@@ -247,3 +261,60 @@ def _next_steps(*, ok: bool) -> list[str]:
         "Fix failed final gate checks.",
         "Re-run beta-live-final-gate before touching the real beta group.",
     ]
+
+
+def _transport_plan(*, event_mode: str, callback_url: str, config_path: str, db_path: str, host: str, port: int) -> dict[str, Any]:
+    if event_mode == "long_connection":
+        return _long_connection_plan(config_path=config_path, db_path=db_path)
+    return beta_callback_deploy_plan_to_dict(
+        build_beta_callback_deploy_plan(
+            callback_url=callback_url,
+            config_path=config_path,
+            db_path=db_path,
+            host=host,
+            port=port,
+        )
+    )
+
+
+def _long_connection_plan(*, config_path: str, db_path: str) -> dict[str, Any]:
+    return {
+        "ok": True,
+        "stage": "ready_to_start_long_connection_receiver",
+        "callback_url": "",
+        "webhook_url": "",
+        "healthz_url": "/healthz",
+        "listen_url": "",
+        "public_https": False,
+        "host": "",
+        "port": 0,
+        "config_path": config_path,
+        "db_path": db_path,
+        "checks": [
+            {
+                "name": "long_connection_no_public_callback",
+                "status": "pass",
+                "message": "long connection mode does not require public callback deployment",
+            }
+        ],
+        "topology": [
+            "Feishu long connection client receives events through the platform long-link channel.",
+            "No public HTTPS callback or reverse proxy is required for event ingress.",
+        ],
+        "commands": [f"stock-agent-orchestrator run-long-connection --config {config_path} --db {db_path} --allow-live-send"],
+        "feishu_console_steps": ["Enable event subscription for long connection mode in the Feishu app console."],
+        "evidence_to_collect": ["run-long-connection startup log.", ".runtime/healthz.json after beta message flow."],
+        "stop_conditions": ["run-long-connection fails to start.", "Any operation_error_count appears in /healthz."],
+        "next_steps": ["Start run-long-connection with the generated command."],
+    }
+
+
+def _event_mode(config_path: Path) -> str:
+    try:
+        return load_config(config_path).feishu.event_mode
+    except Exception:
+        return "callback"
+
+
+def _path_text(path: str) -> str:
+    return path.replace("\\", "/")
