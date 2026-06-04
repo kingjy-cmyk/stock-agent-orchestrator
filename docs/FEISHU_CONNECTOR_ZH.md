@@ -41,9 +41,11 @@ Feishu Gateway
 - `FeishuMessageEvent`：统一飞书消息事件。
 - `FeishuClient`：发送接口。
 - `FakeFeishuClient`：测试用发送器。
+- `FeishuWebhookGateway`：本地 event callback gateway 骨架。
 - `BetaOrchestratorService`：处理 beta 群消息并生成任务卡。
 - `BoundedIngressQueue`：按实例隔离的有界入口队列。
 - `beta-smoke`：不触达真实飞书的 smoke test。
+- `webhook-smoke`：验证 challenge 和 Feishu 风格消息 payload。
 
 ## 下一步真实接入
 
@@ -63,4 +65,3 @@ Feishu Gateway
 - 实盘交易永远关闭。
 - 新规则必须等待用户审批。
 - gateway 层不做选股和分析，只做消息搬运。
-

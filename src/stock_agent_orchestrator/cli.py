@@ -8,6 +8,7 @@ from pathlib import Path
 from stock_agent_orchestrator.bridges.current_stack import CurrentStackBridge
 from stock_agent_orchestrator.config import config_to_dict, load_config, validate_config, validation_to_dict
 from stock_agent_orchestrator.connectors.feishu import FakeFeishuClient, FeishuMessageEvent
+from stock_agent_orchestrator.connectors.feishu_webhook import FeishuWebhookGateway
 from stock_agent_orchestrator.domain.models import AgentRole, TaskIntent
 from stock_agent_orchestrator.persistence.sqlite_store import SQLiteTaskStore
 from stock_agent_orchestrator.services.beta_orchestrator import BetaOrchestratorService
@@ -106,6 +107,11 @@ def build_parser() -> argparse.ArgumentParser:
     worker_smoke.add_argument("--config", default="configs/beta.example.toml")
     worker_smoke.add_argument("--db", default=".runtime/worker-smoke.db")
     worker_smoke.add_argument("--max-per-instance", type=int, default=16)
+
+    webhook_smoke = sub.add_parser("webhook-smoke")
+    webhook_smoke.add_argument("--config", default="configs/beta.example.toml")
+    webhook_smoke.add_argument("--db", default=".runtime/webhook-smoke.db")
+    webhook_smoke.add_argument("--text", default="@小C-beta 今天先给我一份候选池")
 
     return parser
 
@@ -370,6 +376,62 @@ def main() -> None:
                     "text": message.text,
                 }
                 for message in client.sent_messages
+            ],
+        }, ensure_ascii=False, indent=2))
+        return
+
+    if args.command == "webhook-smoke":
+        config = load_config(Path(args.config))
+        client = FakeFeishuClient()
+        worker = ConnectorWorker(
+            queue=BoundedIngressQueue(max_per_instance=16),
+            orchestrator=BetaOrchestratorService(
+                config=config,
+                store=SQLiteTaskStore(Path(args.db)),
+                feishu_client=client,
+            ),
+        )
+        gateway = FeishuWebhookGateway(worker=worker)
+        challenge = gateway.handle_payload({"challenge": "stock-agent-orchestrator"})
+        message = gateway.handle_payload(
+            {
+                "event_id": "webhook-smoke-event-1",
+                "event": {
+                    "sender": {"sender_id": {"open_id": "smoke-user"}},
+                    "message": {
+                        "message_id": "webhook-smoke-message-1",
+                        "chat_id": config.feishu.group_chat_id,
+                        "chat_type": "group",
+                        "content": json.dumps({"text": args.text}, ensure_ascii=False),
+                        "mentions": [{"id": {"open_id": config.feishu.owner_open_id}, "name": config.roles.owner}],
+                        "create_time": "",
+                    },
+                },
+            },
+            drain=True,
+        )
+        print(json.dumps({
+            "challenge": {
+                "accepted": challenge.accepted,
+                "value": challenge.challenge,
+            },
+            "message": {
+                "accepted": message.accepted,
+                "enqueued": message.enqueued,
+                "reason": message.reason,
+                "worker": {
+                    "processed": message.worker_report.processed if message.worker_report else 0,
+                    "handled": message.worker_report.handled if message.worker_report else 0,
+                    "ignored": message.worker_report.ignored if message.worker_report else 0,
+                },
+            },
+            "sent_messages": [
+                {
+                    "chat_id": sent.chat_id,
+                    "message_id": sent.message_id,
+                    "text": sent.text,
+                }
+                for sent in client.sent_messages
             ],
         }, ensure_ascii=False, indent=2))
         return

@@ -199,6 +199,12 @@ Run the worker-stage smoke test with queued fake Feishu events:
 stock-agent-orchestrator worker-smoke --config configs/beta.example.toml
 ```
 
+Run the local Feishu webhook gateway smoke test:
+
+```bash
+stock-agent-orchestrator webhook-smoke --config configs/beta.example.toml
+```
+
 Supported sample formats:
 
 - `.jsonl`: one JSON object per line with `sender_name`, `text`, optional `created_at`, optional `mentions_owner`

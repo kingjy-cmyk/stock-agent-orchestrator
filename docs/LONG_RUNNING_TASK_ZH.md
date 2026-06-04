@@ -38,7 +38,7 @@
 
 ### Stage 2：Real Beta Gateway
 
-状态：`待开始`
+状态：`进行中`
 
 目标：
 
@@ -51,6 +51,11 @@
 - beta 群 @小C-beta 后出现任务卡。
 - 非 beta 群消息被拒绝。
 - formal 配置不能 active。
+
+本阶段先分两步：
+
+- Stage 2A：本地 webhook gateway 骨架，支持 challenge 和消息 payload 入队。
+- Stage 2B：填入真实 beta 群凭证和公网回调地址后，接真实 beta 群。
 
 ### Stage 3：Task Card Update
 
