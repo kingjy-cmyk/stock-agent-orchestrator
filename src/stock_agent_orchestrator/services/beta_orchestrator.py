@@ -77,16 +77,19 @@ class BetaOrchestratorService:
             },
         )
         self.store.save_task(task)
-        sent = self.operation_gateway.apply(
-            [
-                FeishuOperation(
-                    kind=FeishuOperationKind.SEND_CARD,
-                    chat_id=event.chat_id,
-                    text=render_task_card_markdown(task),
-                    metadata={"task_id": task.task_id},
-                )
-            ]
-        )[0]
+        try:
+            sent = self.operation_gateway.apply(
+                [
+                    FeishuOperation(
+                        kind=FeishuOperationKind.SEND_CARD,
+                        chat_id=event.chat_id,
+                        text=render_task_card_markdown(task),
+                        metadata={"task_id": task.task_id},
+                    )
+                ]
+            )[0]
+        except Exception as exc:
+            return BetaProcessResult(False, task_id=task.task_id, reason=f"operation_error:{exc}")
         return BetaProcessResult(True, task_id=task.task_id, sent_message=sent)
 
     def _next_task_id(self) -> str:

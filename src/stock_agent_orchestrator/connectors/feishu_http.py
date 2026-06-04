@@ -23,7 +23,7 @@ class FeishuWebhookHTTPHandler(BaseHTTPRequestHandler):
         if self.path != "/healthz":
             self._write_json(404, {"ok": False, "error": "not_found"})
             return
-        self._write_json(200, {"ok": True})
+        self._write_json(200, {"ok": True, "gateway": self.gateway.state_dict()})
 
     def do_POST(self) -> None:
         if self.path != "/webhook":
@@ -82,7 +82,12 @@ def build_webhook_server(
     allow_live_send: bool = False,
     max_per_instance: int = 1024,
 ) -> ThreadingHTTPServer:
-    operation_gateway = None if feishu_client else build_operation_gateway(config.feishu, allow_live_send=allow_live_send)
+    gateway = FeishuWebhookGateway()
+    operation_gateway = (
+        None
+        if feishu_client
+        else build_operation_gateway(config.feishu, allow_live_send=allow_live_send, error_recorder=gateway)
+    )
     worker = ConnectorWorker(
         queue=BoundedIngressQueue(max_per_instance=max_per_instance),
         orchestrator=BetaOrchestratorService(
@@ -92,7 +97,7 @@ def build_webhook_server(
             operation_gateway=operation_gateway,
         ),
     )
-    gateway = FeishuWebhookGateway(worker=worker)
+    gateway.attach_worker(worker)
 
     class Handler(FeishuWebhookHTTPHandler):
         pass

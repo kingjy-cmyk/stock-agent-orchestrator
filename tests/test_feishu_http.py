@@ -27,7 +27,9 @@ class FeishuHTTPTests(unittest.TestCase):
             try:
                 base = f"http://127.0.0.1:{server.server_address[1]}"
                 health = self._get_json(f"{base}/healthz")
-                self.assertEqual(health, {"ok": True})
+                self.assertTrue(health["ok"])
+                self.assertEqual(health["gateway"]["status"], "connected")
+                self.assertEqual(health["gateway"]["accepted_count"], 0)
 
                 challenge = self._post_json(f"{base}/webhook", {"challenge": "abc"})
                 self.assertEqual(challenge, {"challenge": "abc"})
@@ -38,6 +40,9 @@ class FeishuHTTPTests(unittest.TestCase):
                 self.assertEqual(result["worker_report"]["handled"], 1)
                 self.assertEqual(len(client.sent_messages), 1)
                 self.assertIn("任务卡：BETA-0001", client.sent_messages[0].text)
+                health_after = self._get_json(f"{base}/healthz")
+                self.assertEqual(health_after["gateway"]["accepted_count"], 2)
+                self.assertEqual(health_after["gateway"]["enqueued_count"], 1)
             finally:
                 server.shutdown()
                 server.server_close()

@@ -29,20 +29,21 @@
 | URL verification | 已完成 | challenge 响应 | 后续补飞书 encrypt key 校验 |
 | Message event parse | 已完成 MVP | `parse_message_event` | 后续补更多消息类型 |
 | Live send client | 已完成安全骨架 | `LiveFeishuClient` | 待真实 beta 群验收 |
-| Send safety gate | 已完成 | `send_mode=live` + `--allow-live-send` | 后续补 allowlist 配置 |
+| Send safety gate | 已完成 MVP | `send_mode=live` + `--allow-live-send` + `send_allowlist` | 后续补更细的 per-agent 权限 |
 | Card action callback | 未完成 | 无 | Stage 3 需要补 |
 | Interactive card update | 未完成 | 仅预留 `UPDATE_CARD` | Stage 3 需要补 |
-| Message dedupe | 未完成 | 无 | 真实 beta 前必须补 |
+| Message dedupe | 已完成 MVP | `FeishuWebhookGateway` 内存去重 | 后续补持久化，避免重启后丢状态 |
 | Rate limit | 未完成 | 仅队列上限 | 真实 beta 前必须补 |
-| Gateway state | 未完成 | 无 | 真实 beta 前至少补 connected/degraded |
+| Gateway state | 已完成 MVP | `/healthz` 暴露 `connected/degraded` 和计数 | 后续补 daemon 级心跳 |
+| Operation error 记录 | 已完成 MVP | `GuardedOperationGateway` + gateway error recorder | 后续补持久化错误表 |
 | Multi app / multi gateway | 未完成 | 单 beta gateway | 后续视需要补 |
 | File/image/video | 不在 MVP | 无 | 非当前阶段 |
 
 ## 当前硬性结论
 
-下一阶段不能只做“能收到 webhook”。
+下一阶段不能只做“能收到 webhook”，必须证明 beta 群链路的输入、去重、状态、发送安全闸都工作。
 
-真实 beta 群前至少还要补：
+本轮已补真实 beta 前安全 MVP：
 
 - message_id 去重
 - gateway state
@@ -50,9 +51,16 @@
 - operation error 记录
 - live 配置校验
 
+仍然缺：
+
+- 公网 callback 部署
+- 飞书事件订阅配置
+- 飞书签名 / encrypt key 校验
+- rate limit 细化
+- 去重和错误记录持久化
+
 Stage 3 前必须补：
 
 - card action payload
 - update_card
 - 任务卡 message_id 绑定到 task context
-

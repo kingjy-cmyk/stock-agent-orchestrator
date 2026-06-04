@@ -7,9 +7,11 @@ from stock_agent_orchestrator.connectors.feishu import (
     ClientOperationGateway,
     FakeFeishuClient,
     FeishuOperation,
+    FeishuOperationError,
     FeishuOperationKind,
     LiveFeishuClient,
     build_feishu_client,
+    build_operation_gateway,
 )
 
 
@@ -25,6 +27,14 @@ class FakeHTTPResponse:
 
     def read(self) -> bytes:
         return json.dumps(self.payload).encode("utf-8")
+
+
+class ErrorRecorder:
+    def __init__(self) -> None:
+        self.errors: list[FeishuOperationError] = []
+
+    def record_operation_error(self, error: FeishuOperationError) -> None:
+        self.errors.append(error)
 
 
 class LiveFeishuClientTests(unittest.TestCase):
@@ -88,6 +98,35 @@ class LiveFeishuClientTests(unittest.TestCase):
         self.assertEqual(len(sent), 1)
         self.assertEqual(operation.message_id, "fake-msg-0001")
         self.assertEqual(client.sent_messages[0].text, "task card")
+
+    def test_operation_gateway_rejects_chat_outside_allowlist_and_records_error(self) -> None:
+        recorder = ErrorRecorder()
+        gateway = build_operation_gateway(
+            FeishuConfig(
+                group_chat_id="allowed-chat",
+                owner_open_id="owner",
+                data_open_id="data",
+                analyst_open_id="analyst",
+                send_allowlist=["allowed-chat"],
+            ),
+            error_recorder=recorder,
+        )
+
+        with self.assertRaises(RuntimeError):
+            gateway.apply(
+                [
+                    FeishuOperation(
+                        kind=FeishuOperationKind.SEND_CARD,
+                        chat_id="other-chat",
+                        text="task card",
+                        metadata={"task_id": "BETA-0001"},
+                    )
+                ]
+            )
+
+        self.assertEqual(len(recorder.errors), 1)
+        self.assertEqual(recorder.errors[0].task_id, "BETA-0001")
+        self.assertIn("allowlist", recorder.errors[0].message)
 
 
 if __name__ == "__main__":

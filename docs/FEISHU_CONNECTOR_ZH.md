@@ -45,6 +45,7 @@ Feishu Gateway
 - `FeishuClient`：发送接口。
 - `FeishuOperation`：对标 Codex Operation 的发送操作抽象。
 - `FeishuOperationGateway`：对标 Codex Gateway.Apply 的操作应用接口。
+- `GuardedOperationGateway`：发送 allowlist 和 operation error 记录。
 - `FakeFeishuClient`：测试用发送器。
 - `LiveFeishuClient`：真实飞书发送器，默认不启用。
 - `FeishuWebhookGateway`：本地 event callback gateway 骨架。
@@ -62,7 +63,7 @@ stock-agent-orchestrator run-webhook --config configs/beta.example.toml --host 1
 
 端点：
 
-- `GET /healthz`
+- `GET /healthz`：返回 `ok` 和 gateway 状态。
 - `POST /webhook`
 
 当前仍使用 `FakeFeishuClient`，不会向真实飞书群发送消息。
@@ -76,6 +77,7 @@ stock-agent-orchestrator run-webhook --config configs/beta.example.toml --host 1
 - CLI 显式传入 `--allow-live-send`
 - 项目环境是 `beta`
 - 项目模式是 `active`
+- `feishu.group_chat_id` 必须在 `feishu.send_allowlist` 内
 
 不满足任一条件，都不会向真实飞书群发送消息。
 
@@ -95,6 +97,19 @@ stock-agent-orchestrator run-webhook --config configs/beta.live.example.toml --a
 4. 调用 `BetaOrchestratorService` 建任务和发送任务卡。
 5. 限频、去重、错误记录。
 6. 稳定后再考虑 interactive card update。
+
+## 当前 beta 前安全能力
+
+- `FeishuWebhookGateway` 使用 `event_id/message_id` 做内存去重，重复事件会 accepted 但不会再次入队。
+- `/healthz` 暴露 `connected/degraded`、accepted、enqueued、duplicate、operation error 计数。
+- `GuardedOperationGateway` 会拒绝不在 `send_allowlist` 内的 chat_id。
+- operation 发送失败会记录到 gateway，并让业务结果返回 `operation_error`，避免 worker 直接崩溃。
+
+当前限制：
+
+- 去重和错误记录是内存级，服务重启后会丢失。
+- 还没有飞书签名 / encrypt key 校验。
+- 还没有真正的 rate limit，只有限制入口队列长度。
 
 ## 安全边界
 

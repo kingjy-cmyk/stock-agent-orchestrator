@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import tomllib
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -45,6 +45,7 @@ class FeishuConfig:
     app_secret: str = ""
     api_base_url: str = "https://open.feishu.cn"
     send_mode: str = "fake"
+    send_allowlist: list[str] = field(default_factory=list)
 
 
 @dataclass(frozen=True, slots=True)
@@ -115,6 +116,8 @@ def validate_config(config: OrchestratorConfig) -> list[ConfigValidationIssue]:
             or config.feishu.app_secret.strip() in PLACEHOLDER_VALUES
         ):
             issues.append(ConfigValidationIssue("error", "feishu.app_id", "live send requires app_id and app_secret"))
+        if config.feishu.group_chat_id.strip() not in {value.strip() for value in config.feishu.send_allowlist}:
+            issues.append(ConfigValidationIssue("error", "feishu.send_allowlist", "live send requires group_chat_id in send_allowlist"))
 
     fields = flatten_config(config)
     for field, value in fields.items():

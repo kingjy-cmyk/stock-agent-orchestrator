@@ -218,6 +218,8 @@ Live Feishu sending is guarded. It requires `feishu.send_mode = "live"`, real ap
 stock-agent-orchestrator run-webhook --config configs/beta.live.example.toml --allow-live-send
 ```
 
+For beta safety, the live target chat must also be listed in `feishu.send_allowlist`. The webhook gateway exposes runtime counters at `/healthz`, including duplicate events and operation errors.
+
 Supported sample formats:
 
 - `.jsonl`: one JSON object per line with `sender_name`, `text`, optional `created_at`, optional `mentions_owner`

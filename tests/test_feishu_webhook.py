@@ -62,6 +62,21 @@ class FeishuWebhookTests(unittest.TestCase):
             self.assertEqual(len(client.sent_messages), 1)
             self.assertIn("任务卡：BETA-0001", client.sent_messages[0].text)
 
+    def test_duplicate_event_is_accepted_but_not_enqueued_twice(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            client = FakeFeishuClient()
+            gateway = FeishuWebhookGateway(worker=self._worker(tmp, client))
+
+            first = gateway.handle_payload(payload(), drain=True)
+            second = gateway.handle_payload(payload(), drain=True)
+
+            self.assertTrue(first.enqueued)
+            self.assertTrue(second.accepted)
+            self.assertFalse(second.enqueued)
+            self.assertEqual(second.reason, "duplicate_event")
+            self.assertEqual(len(client.sent_messages), 1)
+            self.assertEqual(gateway.state_snapshot().duplicate_count, 1)
+
     def _worker(self, tmp, client=None) -> ConnectorWorker:
         if hasattr(tmp, "name"):
             tmp_path = Path(tmp.name)

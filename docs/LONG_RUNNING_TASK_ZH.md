@@ -68,24 +68,33 @@ Stage 2A 已实现：
 - fake send 任务卡
 - `LiveFeishuClient` 真实发送安全骨架
 - live 发送必须显式 `--allow-live-send`
+- `send_allowlist` 发送白名单
+- `message_id/event_id` 内存去重
+- `/healthz` gateway 状态
+- operation error 记录
 
 Stage 2B 剩余：
 
-- 对标 Codex 飞书通道补齐真实 beta 前安全项
 - 准备 `configs/beta.live.toml`
 - 填真实 beta 群 `chat_id`
 - 填小C-beta `open_id`
 - 填飞书 app_id / app_secret
+- 填 `send_allowlist`
 - 准备公网 callback 地址
 - 在飞书开放平台配置事件订阅
 - 真实 beta 群发消息后验证任务卡出现
 
-真实 beta 前必须补：
+真实 beta 前安全项已完成 MVP：
 
 - message_id 去重
 - gateway state
 - send allowlist
 - operation error 记录
+
+仍需注意：
+
+- 当前去重和 operation error 记录是内存级，服务重启会丢失。
+- 长期 daemon 运行前应补持久化状态。
 
 ### Stage 3：Task Card Update
 

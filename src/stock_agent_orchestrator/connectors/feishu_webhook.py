@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from collections import deque
+from dataclasses import asdict, dataclass
 from typing import Any
 
-from stock_agent_orchestrator.connectors.feishu import FeishuMessageEvent
+from stock_agent_orchestrator.connectors.feishu import FeishuMessageEvent, FeishuOperationError, OperationErrorRecorder
 from stock_agent_orchestrator.services.connector_worker import ConnectorWorker, WorkerRunReport
 from stock_agent_orchestrator.services.ingress import IngressItem
 
@@ -18,29 +19,104 @@ class WebhookResult:
     worker_report: WorkerRunReport | None = None
 
 
-class FeishuWebhookGateway:
+@dataclass(frozen=True, slots=True)
+class GatewayStateSnapshot:
+    status: str
+    accepted_count: int
+    enqueued_count: int
+    duplicate_count: int
+    operation_error_count: int
+    last_error: str = ""
+
+
+class FeishuWebhookGateway(OperationErrorRecorder):
     """Minimal Feishu event-callback gateway.
 
     The gateway only normalizes platform payloads and enqueues work. Business
     state changes still happen in ConnectorWorker/BetaOrchestratorService.
     """
 
-    def __init__(self, *, worker: ConnectorWorker, instance_id: str = "beta") -> None:
+    def __init__(
+        self,
+        *,
+        worker: ConnectorWorker | None = None,
+        instance_id: str = "beta",
+        dedupe_window: int = 2048,
+    ) -> None:
         self.worker = worker
         self.instance_id = instance_id
+        self.dedupe_window = dedupe_window
+        self._seen_keys: set[str] = set()
+        self._seen_order: deque[str] = deque()
+        self._accepted_count = 0
+        self._enqueued_count = 0
+        self._duplicate_count = 0
+        self._operation_errors: list[FeishuOperationError] = []
+        self._last_error = ""
 
     def handle_payload(self, payload: dict[str, Any], *, drain: bool = False) -> WebhookResult:
+        if self.worker is None:
+            self._last_error = "worker_not_attached"
+            return WebhookResult(False, reason="worker_not_attached")
+
         challenge = str(payload.get("challenge") or "").strip()
         if challenge:
+            self._accepted_count += 1
             return WebhookResult(True, challenge=challenge, reason="url_verification")
 
         event = parse_message_event(payload)
         if event is None:
+            self._last_error = "unsupported_payload"
             return WebhookResult(False, reason="unsupported_payload")
 
+        self._accepted_count += 1
+        if self._is_duplicate(event):
+            self._duplicate_count += 1
+            return WebhookResult(True, enqueued=False, reason="duplicate_event")
+
         self.worker.enqueue(IngressItem(self.instance_id, event))
+        self._enqueued_count += 1
         report = self.worker.drain_once() if drain else None
         return WebhookResult(True, enqueued=True, worker_report=report)
+
+    def attach_worker(self, worker: ConnectorWorker) -> None:
+        self.worker = worker
+
+    def record_operation_error(self, error: FeishuOperationError) -> None:
+        self._operation_errors.append(error)
+        self._last_error = error.message
+
+    def state_snapshot(self) -> GatewayStateSnapshot:
+        status = "connected"
+        if self._last_error:
+            status = "degraded"
+        return GatewayStateSnapshot(
+            status=status,
+            accepted_count=self._accepted_count,
+            enqueued_count=self._enqueued_count,
+            duplicate_count=self._duplicate_count,
+            operation_error_count=len(self._operation_errors),
+            last_error=self._last_error,
+        )
+
+    def state_dict(self) -> dict[str, Any]:
+        return asdict(self.state_snapshot())
+
+    def operation_errors(self) -> list[FeishuOperationError]:
+        return list(self._operation_errors)
+
+    def _is_duplicate(self, event: FeishuMessageEvent) -> bool:
+        key = event.event_id or event.message_id
+        if not key:
+            return False
+        if key in self._seen_keys:
+            return True
+        self._seen_keys.add(key)
+        self._seen_order.append(key)
+        while self.dedupe_window > 0 and len(self._seen_order) > self.dedupe_window:
+            expired = self._seen_order.popleft()
+            self._seen_keys.discard(expired)
+        return False
 
 
 def parse_message_event(payload: dict[str, Any]) -> FeishuMessageEvent | None:

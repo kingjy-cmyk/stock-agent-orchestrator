@@ -48,6 +48,14 @@ class FeishuOperation:
     metadata: dict[str, str] = field(default_factory=dict)
 
 
+@dataclass(frozen=True, slots=True)
+class FeishuOperationError:
+    kind: str
+    chat_id: str
+    message: str
+    task_id: str = ""
+
+
 class FeishuClient(Protocol):
     def send_message(self, chat_id: str, text: str) -> SentFeishuMessage:
         """Send a plain text or markdown-like message to a Feishu chat."""
@@ -56,6 +64,11 @@ class FeishuClient(Protocol):
 class FeishuOperationGateway(Protocol):
     def apply(self, operations: list[FeishuOperation]) -> list[SentFeishuMessage]:
         """Apply normalized Feishu operations."""
+
+
+class OperationErrorRecorder(Protocol):
+    def record_operation_error(self, error: FeishuOperationError) -> None:
+        """Record a failed operation without coupling business logic to transport state."""
 
 
 class FakeFeishuClient:
@@ -86,6 +99,46 @@ class ClientOperationGateway:
             operation.message_id = sent.message_id
             results.append(sent)
         return results
+
+
+class GuardedOperationGateway:
+    """Safety wrapper for live-capable operation gateways."""
+
+    def __init__(
+        self,
+        delegate: FeishuOperationGateway,
+        *,
+        allowed_chat_ids: set[str],
+        error_recorder: OperationErrorRecorder | None = None,
+    ) -> None:
+        self.delegate = delegate
+        self.allowed_chat_ids = {chat_id.strip() for chat_id in allowed_chat_ids if chat_id.strip()}
+        self.error_recorder = error_recorder
+
+    def apply(self, operations: list[FeishuOperation]) -> list[SentFeishuMessage]:
+        for operation in operations:
+            if operation.chat_id.strip() not in self.allowed_chat_ids:
+                message = f"chat_id not in send allowlist: {operation.chat_id}"
+                self._record_error(operation, message)
+                raise RuntimeError(message)
+        try:
+            return self.delegate.apply(operations)
+        except Exception as exc:
+            for operation in operations:
+                self._record_error(operation, str(exc))
+            raise
+
+    def _record_error(self, operation: FeishuOperation, message: str) -> None:
+        if self.error_recorder is None:
+            return
+        self.error_recorder.record_operation_error(
+            FeishuOperationError(
+                kind=str(operation.kind),
+                chat_id=operation.chat_id,
+                message=message,
+                task_id=operation.metadata.get("task_id", ""),
+            )
+        )
 
 
 class LiveFeishuClient:
@@ -167,5 +220,15 @@ def build_feishu_client(config: FeishuConfig, *, allow_live_send: bool = False) 
     )
 
 
-def build_operation_gateway(config: FeishuConfig, *, allow_live_send: bool = False) -> FeishuOperationGateway:
-    return ClientOperationGateway(build_feishu_client(config, allow_live_send=allow_live_send))
+def build_operation_gateway(
+    config: FeishuConfig,
+    *,
+    allow_live_send: bool = False,
+    error_recorder: OperationErrorRecorder | None = None,
+) -> FeishuOperationGateway:
+    allowed_chat_ids = set(config.send_allowlist or [config.group_chat_id])
+    return GuardedOperationGateway(
+        ClientOperationGateway(build_feishu_client(config, allow_live_send=allow_live_send)),
+        allowed_chat_ids=allowed_chat_ids,
+        error_recorder=error_recorder,
+    )
