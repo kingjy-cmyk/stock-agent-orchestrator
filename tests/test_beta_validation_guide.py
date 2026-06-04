@@ -44,7 +44,7 @@ class BetaValidationGuideTests(unittest.TestCase):
             self.assertTrue(guide.preflight_ok)
             self.assertEqual(guide.stage, "run_live_beta_and_collect_evidence")
             self.assertIn("https://agent-beta.example.com/webhook", guide.webhook_url)
-            self.assertTrue(any("beta-validation-report" in command for command in guide.commands))
+            self.assertTrue(any("collect-beta-evidence" in command for command in guide.commands))
             self.assertTrue(any("BETA_VALIDATION_REPORT_ZH.md" in command for command in guide.commands))
 
     def test_markdown_contains_checklist_commands_and_evidence(self) -> None:

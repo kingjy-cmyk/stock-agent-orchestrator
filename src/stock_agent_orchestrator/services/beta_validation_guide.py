@@ -121,7 +121,7 @@ def _checklist(*, preflight_ok: bool, missing_report: bool) -> list[str]:
         "在飞书开放平台把事件订阅 callback 指向 webhook URL。",
         "在 beta 群发送一次 BOOS @小C-beta 委托。",
         "确认群里出现任务卡，并在小智/小巴后续消息后原地更新同一张卡。",
-        "保存 /healthz JSON，确认 operation_error_count 为 0。",
+        "运行 collect-beta-evidence 自动保存 /healthz JSON 并生成验证报告。",
     ]
     if missing_report:
         result.append("生成 docs/BETA_VALIDATION_REPORT_ZH.md 并提交。")
@@ -148,9 +148,8 @@ def _commands(
         f"stock-agent-orchestrator beta-live-preflight --config {config_path} --callback-url {callback_url} --format markdown",
         f"stock-agent-orchestrator run-webhook --config {config_path} --db {db_path} --allow-live-send",
         f"stock-agent-orchestrator beta-callback-probe --config {config_path} --callback-url {callback_url} --format markdown",
-        f"curl {callback_url.rstrip('/')}/healthz > {healthz_json_path}",
         (
-            "stock-agent-orchestrator beta-validation-report "
+            "stock-agent-orchestrator collect-beta-evidence "
             f"--config {config_path} "
             f"--callback-url {callback_url} "
             "--commit <git-commit> "
@@ -160,7 +159,7 @@ def _commands(
             "--beta-group-name <beta-group-name> "
             "--feishu-app-name <feishu-app-name> "
             "--task-card-screenshot <screenshot-or-gif-path> "
-            f"--output {report_path}"
+            f"--report-output {report_path}"
         ),
         "stock-agent-orchestrator application-readiness --format markdown",
     ]

@@ -152,12 +152,10 @@ https://your-public-domain.example/healthz
 - `operation_error_count = 0`
 - `duplicate_count` 没有异常增长
 
-### 6. 生成验证报告
-
-先保存 `/healthz` 响应到 `.runtime/healthz.json`，再运行：
+### 6. 收集证据并生成验证报告
 
 ```bash
-stock-agent-orchestrator beta-validation-report \
+stock-agent-orchestrator collect-beta-evidence \
   --config configs/beta.live.toml \
   --callback-url https://your-public-domain.example \
   --commit <commit> \
@@ -166,7 +164,7 @@ stock-agent-orchestrator beta-validation-report \
   --healthz-json .runtime/healthz.json \
   --beta-group-name "Stock Agent Beta" \
   --feishu-app-name "stock-agent-orchestrator-beta" \
-  --output docs/BETA_VALIDATION_REPORT_ZH.md
+  --report-output docs/BETA_VALIDATION_REPORT_ZH.md
 ```
 
 期望：

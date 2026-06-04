@@ -22,6 +22,11 @@ from stock_agent_orchestrator.services.beta_callback_probe import (
     callback_probe_report_to_markdown,
     run_beta_callback_probe,
 )
+from stock_agent_orchestrator.services.beta_evidence_collector import (
+    beta_evidence_collection_to_dict,
+    beta_evidence_collection_to_markdown,
+    collect_beta_evidence,
+)
 from stock_agent_orchestrator.services.beta_live_config import (
     beta_live_config_init_to_dict,
     beta_live_config_init_to_markdown,
@@ -171,6 +176,23 @@ def build_parser() -> argparse.ArgumentParser:
     beta_callback_probe.add_argument("--callback-url", required=True)
     beta_callback_probe.add_argument("--challenge", default="stock-agent-orchestrator-probe")
     beta_callback_probe.add_argument("--format", choices=["json", "markdown"], default="markdown")
+
+    collect_beta_evidence_cmd = sub.add_parser("collect-beta-evidence")
+    collect_beta_evidence_cmd.add_argument("--config", default="configs/beta.live.toml")
+    collect_beta_evidence_cmd.add_argument("--callback-url", required=True)
+    collect_beta_evidence_cmd.add_argument("--commit", default="")
+    collect_beta_evidence_cmd.add_argument("--db", default=".runtime/beta-live.db")
+    collect_beta_evidence_cmd.add_argument("--task-id", default="")
+    collect_beta_evidence_cmd.add_argument("--healthz-json", default=".runtime/healthz.json")
+    collect_beta_evidence_cmd.add_argument("--report-output", default="docs/BETA_VALIDATION_REPORT_ZH.md")
+    collect_beta_evidence_cmd.add_argument("--beta-group-name", default="")
+    collect_beta_evidence_cmd.add_argument("--feishu-app-name", default="")
+    collect_beta_evidence_cmd.add_argument("--delegate-text", default="@小C-beta 今天先给我一份候选池")
+    collect_beta_evidence_cmd.add_argument("--beta-group-screenshot", default="")
+    collect_beta_evidence_cmd.add_argument("--task-card-screenshot", default="")
+    collect_beta_evidence_cmd.add_argument("--healthz-screenshot", default="")
+    collect_beta_evidence_cmd.add_argument("--notes", default="")
+    collect_beta_evidence_cmd.add_argument("--format", choices=["json", "markdown"], default="markdown")
 
     render_card = sub.add_parser("render-task-card")
     render_card.add_argument("--db", default=str(DEFAULT_DB))
@@ -468,6 +490,35 @@ def main() -> None:
         )
         print(rendered)
         if not report.ok:
+            raise SystemExit(1)
+        return
+
+    if args.command == "collect-beta-evidence":
+        collection = collect_beta_evidence(
+            config=load_config(Path(args.config)),
+            callback_url=args.callback_url,
+            commit=args.commit,
+            db_path=Path(args.db),
+            task_id=args.task_id,
+            healthz_json_path=Path(args.healthz_json),
+            report_path=Path(args.report_output),
+            evidence=BetaValidationEvidence(
+                beta_group_name=args.beta_group_name,
+                feishu_app_name=args.feishu_app_name,
+                delegate_text=args.delegate_text,
+                beta_group_screenshot=args.beta_group_screenshot,
+                task_card_screenshot=args.task_card_screenshot,
+                healthz_screenshot=args.healthz_screenshot,
+                notes=args.notes,
+            ),
+        )
+        rendered = (
+            beta_evidence_collection_to_markdown(collection)
+            if args.format == "markdown"
+            else json.dumps(beta_evidence_collection_to_dict(collection), ensure_ascii=False, indent=2)
+        )
+        print(rendered)
+        if not collection.ok:
             raise SystemExit(1)
         return
 

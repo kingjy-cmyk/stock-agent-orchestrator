@@ -48,9 +48,8 @@ stock-agent-orchestrator application-readiness --format markdown
 4. 启动 `run-webhook --allow-live-send`。
 5. 运行 `beta-callback-probe`，确认公网 `/healthz` 和 `/webhook` challenge 可用。
 6. 在 beta 群发送 `@小C-beta 今天先给我一份候选池`。
-7. 保存 `/healthz` 到 `.runtime/healthz.json`。
-8. 生成 `docs/BETA_VALIDATION_REPORT_ZH.md`。
-9. 补任务卡截图或录屏路径。
+7. 运行 `collect-beta-evidence`，自动保存 `/healthz` 到 `.runtime/healthz.json` 并生成 `docs/BETA_VALIDATION_REPORT_ZH.md`。
+8. 补任务卡截图或录屏路径。
 
 推荐先运行：
 
@@ -60,6 +59,12 @@ stock-agent-orchestrator init-beta-live-config --output configs/beta.live.toml
 
 ```bash
 stock-agent-orchestrator beta-validation-guide --config configs/beta.live.toml --callback-url https://your-public-domain.example --format markdown
+```
+
+真实 beta 群跑通后收集证据：
+
+```bash
+stock-agent-orchestrator collect-beta-evidence --config configs/beta.live.toml --callback-url https://your-public-domain.example --db .runtime/webhook.db --healthz-json .runtime/healthz.json --report-output docs/BETA_VALIDATION_REPORT_ZH.md --commit <commit>
 ```
 
 完成后再运行：

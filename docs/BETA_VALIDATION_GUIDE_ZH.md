@@ -40,14 +40,19 @@ stock-agent-orchestrator beta-validation-guide --config configs/beta.live.toml -
 5. 运行 `beta-callback-probe`，确认公网 `/healthz` 和 `/webhook` challenge 都可用。
 6. 在飞书开放平台配置 event subscription。
 7. 在 beta 群发送一次委托。
-8. 保存 `/healthz` JSON。
-9. 生成 `docs/BETA_VALIDATION_REPORT_ZH.md`。
-10. 再运行 `application-readiness`。
+8. 运行 `collect-beta-evidence`，自动保存 `/healthz` JSON 并生成 `docs/BETA_VALIDATION_REPORT_ZH.md`。
+9. 再运行 `application-readiness`。
 
 公网 callback 探测命令：
 
 ```bash
 stock-agent-orchestrator beta-callback-probe --config configs/beta.live.toml --callback-url https://your-public-domain.example --format markdown
+```
+
+收集证据并生成报告：
+
+```bash
+stock-agent-orchestrator collect-beta-evidence --config configs/beta.live.toml --callback-url https://your-public-domain.example --db .runtime/webhook.db --healthz-json .runtime/healthz.json --report-output docs/BETA_VALIDATION_REPORT_ZH.md --commit <commit>
 ```
 
 真实配置初始化命令：

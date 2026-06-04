@@ -79,10 +79,10 @@ stock-agent-orchestrator run-webhook --config configs/beta.live.toml --allow-liv
 
 ## 自动生成
 
-真实 beta 验证完成后，可以用命令生成报告：
+真实 beta 验证完成后，优先用命令自动拉取 `/healthz` 并生成报告：
 
 ```bash
-stock-agent-orchestrator beta-validation-report ^
+stock-agent-orchestrator collect-beta-evidence ^
   --config configs/beta.live.toml ^
   --callback-url https://your-public-domain.example ^
   --commit <commit> ^
@@ -92,10 +92,10 @@ stock-agent-orchestrator beta-validation-report ^
   --feishu-app-name "stock-agent-orchestrator-beta" ^
   --beta-group-screenshot docs/assets/beta-group.png ^
   --task-card-screenshot docs/assets/task-card.png ^
-  --output docs/BETA_VALIDATION_REPORT_ZH.md
+  --report-output docs/BETA_VALIDATION_REPORT_ZH.md
 ```
 
-其中 `.runtime/healthz.json` 可以由公网 `/healthz` 响应保存得到。
+其中 `.runtime/healthz.json` 会由公网 `/healthz` 响应自动保存得到。
 
 如果省略 `--task-id`，命令会从 SQLite 中自动选择最新的 `BETA-*` 任务。
 

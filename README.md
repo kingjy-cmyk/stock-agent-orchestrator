@@ -59,7 +59,7 @@ Current status:
 
 - local install/demo/smoke paths are documented
 - Feishu connector has a safe beta preflight gate
-- 77 unit tests pass locally
+- 80 unit tests pass locally
 - real Feishu beta validation is still pending
 
 Current readiness can be checked by command:
@@ -256,10 +256,10 @@ Before touching a real beta group, run the stricter live preflight gate:
 stock-agent-orchestrator beta-live-preflight --config configs/beta.live.toml --callback-url https://your-public-domain.example
 ```
 
-After a real beta run, generate a validation report:
+After a real beta run, collect `/healthz` and generate a validation report:
 
 ```bash
-stock-agent-orchestrator beta-validation-report --config configs/beta.live.toml --callback-url https://your-public-domain.example --db .runtime/webhook.db --task-id BETA-0001 --healthz-json .runtime/healthz.json --output docs/BETA_VALIDATION_REPORT_ZH.md
+stock-agent-orchestrator collect-beta-evidence --config configs/beta.live.toml --callback-url https://your-public-domain.example --db .runtime/webhook.db --task-id BETA-0001 --healthz-json .runtime/healthz.json --report-output docs/BETA_VALIDATION_REPORT_ZH.md
 ```
 
 Supported sample formats:
