@@ -1,0 +1,56 @@
+# 飞书 Beta 验收向导
+
+`beta-validation-guide` 用来把真实 beta 群验收步骤串起来。
+
+它不会启动 webhook，也不会发送飞书消息。它只读取配置、callback URL 和仓库状态，然后告诉你当前是否可以进入真实 beta 群验证。
+
+## 什么时候使用
+
+在准备进入真实 beta 群前运行：
+
+```bash
+stock-agent-orchestrator beta-validation-guide --config configs/beta.live.toml --callback-url https://your-public-domain.example --format markdown
+```
+
+## 输出内容
+
+向导会输出：
+
+- 当前阶段。
+- readiness 评分。
+- `beta-live-preflight` 是否通过。
+- webhook URL 和 healthz URL。
+- 当前应该执行的检查清单。
+- 下一步命令。
+- 需要收集的截图、录屏和 JSON 证据。
+- 风险提示。
+
+## 安全规则
+
+如果 preflight 没通过，向导不会展示 `run-webhook --allow-live-send` 命令。
+
+这条规则是为了避免配置还没准备好时误触真实 beta 群。
+
+## 推荐顺序
+
+1. 准备 `configs/beta.live.toml`。
+2. 运行 `beta-validation-guide`。
+3. 如果向导显示 `fix_preflight_before_live_beta`，先修配置。
+4. 如果向导显示 `run_live_beta_and_collect_evidence`，再启动 `run-webhook --allow-live-send`。
+5. 在飞书开放平台配置 event subscription。
+6. 在 beta 群发送一次委托。
+7. 保存 `/healthz` JSON。
+8. 生成 `docs/BETA_VALIDATION_REPORT_ZH.md`。
+9. 再运行 `application-readiness`。
+
+## 验收成功标准
+
+真实 beta 验收至少要证明：
+
+- beta 群 @小C-beta 后能建任务。
+- 群里出现任务卡。
+- 小智-beta / 小巴-beta 后续跟进能更新同一张任务卡。
+- `/healthz` 显示 gateway connected。
+- `operation_error_count` 为 0。
+- SQLite 中存在对应任务 ID。
+- `docs/BETA_VALIDATION_REPORT_ZH.md` 已生成并提交。

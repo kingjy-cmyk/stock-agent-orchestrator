@@ -24,6 +24,7 @@
 - [申请材料草案](docs/APPLICATION_ZH.md)
 - [申请完成度检查](docs/APPLICATION_READINESS_ZH.md)
 - [演示脚本](docs/DEMO_SCRIPT_ZH.md)
+- [飞书 Beta 验收向导](docs/BETA_VALIDATION_GUIDE_ZH.md)
 - [飞书 Beta 验证报告模板](docs/BETA_VALIDATION_REPORT_TEMPLATE_ZH.md)
 - [中文产品介绍](docs/INTRO_ZH.md)
 - [飞书优先原则](docs/FEISHU_FIRST_ZH.md)
@@ -58,7 +59,7 @@ Current status:
 
 - local install/demo/smoke paths are documented
 - Feishu connector has a safe beta preflight gate
-- 49 unit tests pass locally
+- 55 unit tests pass locally
 - real Feishu beta validation is still pending
 
 Current readiness can be checked by command:
@@ -72,6 +73,7 @@ For the application narrative and demo checklist, see:
 - [申请材料草案](docs/APPLICATION_ZH.md)
 - [申请完成度检查](docs/APPLICATION_READINESS_ZH.md)
 - [演示脚本](docs/DEMO_SCRIPT_ZH.md)
+- [飞书 Beta 验收向导](docs/BETA_VALIDATION_GUIDE_ZH.md)
 - [飞书 Beta 验证报告模板](docs/BETA_VALIDATION_REPORT_TEMPLATE_ZH.md)
 
 ## Product Shape

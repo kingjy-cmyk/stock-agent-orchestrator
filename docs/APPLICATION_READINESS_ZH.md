@@ -43,12 +43,19 @@ stock-agent-orchestrator application-readiness --format markdown
 ## 冲到 90+ 的最短路径
 
 1. 准备 `configs/beta.live.toml`。
-2. 跑通 `beta-live-preflight`。
-3. 启动 `run-webhook --allow-live-send`。
-4. 在 beta 群发送 `@小C-beta 今天先给我一份候选池`。
-5. 保存 `/healthz` 到 `.runtime/healthz.json`。
-6. 生成 `docs/BETA_VALIDATION_REPORT_ZH.md`。
-7. 补任务卡截图或录屏路径。
+2. 运行 `beta-validation-guide`，确认是否允许进入真实 beta。
+3. 跑通 `beta-live-preflight`。
+4. 启动 `run-webhook --allow-live-send`。
+5. 在 beta 群发送 `@小C-beta 今天先给我一份候选池`。
+6. 保存 `/healthz` 到 `.runtime/healthz.json`。
+7. 生成 `docs/BETA_VALIDATION_REPORT_ZH.md`。
+8. 补任务卡截图或录屏路径。
+
+推荐先运行：
+
+```bash
+stock-agent-orchestrator beta-validation-guide --config configs/beta.live.toml --callback-url https://your-public-domain.example --format markdown
+```
 
 完成后再运行：
 

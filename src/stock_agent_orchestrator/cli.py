@@ -29,6 +29,11 @@ from stock_agent_orchestrator.services.beta_validation_report import (
     beta_validation_report_to_markdown,
     build_beta_validation_report,
 )
+from stock_agent_orchestrator.services.beta_validation_guide import (
+    beta_validation_guide_to_dict,
+    beta_validation_guide_to_markdown,
+    build_beta_validation_guide,
+)
 from stock_agent_orchestrator.services.connector_worker import ConnectorWorker
 from stock_agent_orchestrator.services.demo import write_demo_sample
 from stock_agent_orchestrator.services.doctor import doctor_report_to_dict, run_doctor
@@ -135,6 +140,15 @@ def build_parser() -> argparse.ArgumentParser:
     beta_validation_report.add_argument("--notes", default="")
     beta_validation_report.add_argument("--output", default="")
     beta_validation_report.add_argument("--format", choices=["json", "markdown"], default="markdown")
+
+    beta_validation_guide = sub.add_parser("beta-validation-guide")
+    beta_validation_guide.add_argument("--repo-root", default=".")
+    beta_validation_guide.add_argument("--config", default="configs/beta.live.toml")
+    beta_validation_guide.add_argument("--callback-url", required=True)
+    beta_validation_guide.add_argument("--db", default=".runtime/beta-live.db")
+    beta_validation_guide.add_argument("--healthz-json", default=".runtime/healthz.json")
+    beta_validation_guide.add_argument("--report-output", default="docs/BETA_VALIDATION_REPORT_ZH.md")
+    beta_validation_guide.add_argument("--format", choices=["json", "markdown"], default="markdown")
 
     render_card = sub.add_parser("render-task-card")
     render_card.add_argument("--db", default=str(DEFAULT_DB))
@@ -382,6 +396,26 @@ def main() -> None:
             Path(args.output).write_text(rendered, encoding="utf-8")
         print(rendered)
         if not report.ok:
+            raise SystemExit(1)
+        return
+
+    if args.command == "beta-validation-guide":
+        guide = build_beta_validation_guide(
+            config=load_config(Path(args.config)),
+            callback_url=args.callback_url,
+            repo_root=Path(args.repo_root),
+            config_path=args.config,
+            db_path=args.db,
+            healthz_json_path=args.healthz_json,
+            report_path=args.report_output,
+        )
+        rendered = (
+            beta_validation_guide_to_markdown(guide)
+            if args.format == "markdown"
+            else json.dumps(beta_validation_guide_to_dict(guide), ensure_ascii=False, indent=2)
+        )
+        print(rendered)
+        if not guide.ready_for_live_beta:
             raise SystemExit(1)
         return
 
