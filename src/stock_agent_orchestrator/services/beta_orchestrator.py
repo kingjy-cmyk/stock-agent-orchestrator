@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 from stock_agent_orchestrator.adapters.feishu_control import FeishuControlAdapter, FeishuEnvelope
@@ -17,6 +18,9 @@ from stock_agent_orchestrator.domain.models import AgentRole, Task, TaskStatus
 from stock_agent_orchestrator.persistence.sqlite_store import SQLiteTaskStore
 from stock_agent_orchestrator.services.task_card import render_task_card_markdown
 from stock_agent_orchestrator.services.task_engine import TaskEngine
+
+
+TASK_ID_PATTERN = re.compile(r"\bBETA-\d{4,}\b", re.IGNORECASE)
 
 
 @dataclass(frozen=True, slots=True)
@@ -83,7 +87,7 @@ class BetaOrchestratorService:
         return self._send_task_card(event.chat_id, task)
 
     def _process_agent_update(self, event: FeishuMessageEvent, actor: AgentRole) -> BetaProcessResult:
-        task = self._latest_open_task(event.chat_id)
+        task = self._target_task(event)
         if task is None:
             return BetaProcessResult(False, reason="no_open_task")
         task.context["last_agent_message_id"] = event.message_id
@@ -133,3 +137,19 @@ class BetaOrchestratorService:
                 continue
             return task
         return None
+
+    def _target_task(self, event: FeishuMessageEvent) -> Task | None:
+        if task_id := self._extract_task_id(event.text):
+            task = self.store.load_task(task_id)
+            if task is None:
+                return None
+            if task.context.get("chat_id") != event.chat_id:
+                return None
+            if task.status in {TaskStatus.CLOSED, TaskStatus.RECORDED}:
+                return None
+            return task
+        return self._latest_open_task(event.chat_id)
+
+    def _extract_task_id(self, text: str) -> str:
+        match = TASK_ID_PATTERN.search(text)
+        return match.group(0).upper() if match else ""

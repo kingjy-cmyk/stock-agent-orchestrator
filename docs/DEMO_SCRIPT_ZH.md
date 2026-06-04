@@ -128,7 +128,7 @@ stock-agent-orchestrator run-webhook --config configs/beta.live.toml --allow-liv
 让小巴-beta 在同一 beta 群回复：
 
 ```text
-候选池已筛出，RSI<35 共 3 只
+BETA-0001 候选池已筛出，RSI<35 共 3 只
 ```
 
 期望：
@@ -136,6 +136,7 @@ stock-agent-orchestrator run-webhook --config configs/beta.live.toml --allow-liv
 - 不创建 `BETA-0002`。
 - `BETA-0001` 状态推进到 `scanning`。
 - 群里出现更新后的任务卡 markdown。
+- 如果 beta 群里有多个任务，消息中的 `BETA-0001` 会优先作为绑定依据。
 
 ### 5. 检查健康状态
 

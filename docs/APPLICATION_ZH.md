@@ -42,8 +42,9 @@
 - `send_allowlist`、`verification_token`、去重、状态健康检查、operation error 记录。
 - `beta-live-preflight` 真实 beta 前准入检查。
 - 小智-beta / 小巴-beta 后续消息更新同一任务的 MVP。
+- agent 后续消息可通过显式 `BETA-0001` 绑定目标任务。
 - 中文说明、安装、维护、路线图、飞书连接器文档。
-- 单元测试 47 项通过。
+- 单元测试 49 项通过。
 
 ## 当前边界
 
@@ -61,6 +62,7 @@
 
 - 真实飞书 beta 群中能稳定出现任务卡。
 - 小智-beta / 小巴-beta 回复能在真实 beta 群中稳定更新同一任务卡。
+- reply/thread/message_id 能精准绑定原任务卡。
 - interactive card update 已完成。
 
 ## 申请前建议补齐

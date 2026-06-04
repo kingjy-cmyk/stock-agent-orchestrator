@@ -116,6 +116,7 @@ stock-agent-orchestrator beta-live-preflight --config configs/beta.live.toml --c
 - `FeishuWebhookGateway` 会在配置 `verification_token` 后拒绝 token 不匹配的 callback。
 - operation 发送失败会记录到 gateway，并让业务结果返回 `operation_error`，避免 worker 直接崩溃。
 - 小智-beta / 小巴-beta 的后续消息可推进同一任务，并发送更新后的任务卡 markdown。
+- 小智-beta / 小巴-beta 消息中显式包含 `BETA-0001` 时，会优先绑定该任务，降低多任务并行误更新风险。
 
 当前限制：
 
@@ -123,6 +124,7 @@ stock-agent-orchestrator beta-live-preflight --config configs/beta.live.toml --c
 - 还没有飞书 encrypt key 解密和请求签名校验。
 - 还没有真正的 rate limit，只有限制入口队列长度。
 - 还没有真正的 interactive card update，目前是追加发送更新后的 markdown 任务卡。
+- 还没有根据 reply/thread/message_id 绑定原任务卡。
 
 ## 安全边界
 
