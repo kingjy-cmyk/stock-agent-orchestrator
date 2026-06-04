@@ -37,6 +37,11 @@ from stock_agent_orchestrator.services.beta_live_preflight import (
     preflight_report_to_markdown,
     run_beta_live_preflight,
 )
+from stock_agent_orchestrator.services.beta_live_runbook import (
+    beta_live_runbook_to_dict,
+    beta_live_runbook_to_markdown,
+    build_beta_live_runbook,
+)
 from stock_agent_orchestrator.services.beta_orchestrator import BetaOrchestratorService
 from stock_agent_orchestrator.services.beta_validation_report import (
     BetaValidationEvidence,
@@ -144,6 +149,15 @@ def build_parser() -> argparse.ArgumentParser:
     beta_live_preflight.add_argument("--config", default="configs/beta.live.toml")
     beta_live_preflight.add_argument("--callback-url", required=True)
     beta_live_preflight.add_argument("--format", choices=["json", "markdown"], default="json")
+
+    beta_live_runbook = sub.add_parser("beta-live-runbook")
+    beta_live_runbook.add_argument("--repo-root", default=".")
+    beta_live_runbook.add_argument("--config", default="configs/beta.live.toml")
+    beta_live_runbook.add_argument("--callback-url", required=True)
+    beta_live_runbook.add_argument("--db", default=".runtime/webhook.db")
+    beta_live_runbook.add_argument("--healthz-json", default=".runtime/healthz.json")
+    beta_live_runbook.add_argument("--report-output", default="docs/BETA_VALIDATION_REPORT_ZH.md")
+    beta_live_runbook.add_argument("--format", choices=["json", "markdown"], default="markdown")
 
     beta_validation_report = sub.add_parser("beta-validation-report")
     beta_validation_report.add_argument("--config", default="configs/beta.live.toml")
@@ -423,6 +437,26 @@ def main() -> None:
         )
         print(rendered)
         if not report.ok:
+            raise SystemExit(1)
+        return
+
+    if args.command == "beta-live-runbook":
+        runbook = build_beta_live_runbook(
+            config=load_config(Path(args.config)),
+            callback_url=args.callback_url,
+            repo_root=Path(args.repo_root),
+            config_path=args.config,
+            db_path=args.db,
+            healthz_json_path=args.healthz_json,
+            report_path=args.report_output,
+        )
+        rendered = (
+            beta_live_runbook_to_markdown(runbook)
+            if args.format == "markdown"
+            else json.dumps(beta_live_runbook_to_dict(runbook), ensure_ascii=False, indent=2)
+        )
+        print(rendered)
+        if not runbook.ready_to_start:
             raise SystemExit(1)
         return
 

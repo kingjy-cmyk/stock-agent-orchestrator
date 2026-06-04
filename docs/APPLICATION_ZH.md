@@ -42,12 +42,13 @@
 - `send_allowlist`、`verification_token`、去重、状态健康检查、operation error 记录。
 - `beta-live-preflight` 真实 beta 前准入检查。
 - `beta-validation-guide` 真实 beta 验收向导。
+- `beta-live-runbook` 真实 beta 群运行手册。
 - `beta-callback-probe` 公网 callback 探测。
 - 小智-beta / 小巴-beta 后续消息更新同一任务的 MVP。
 - agent 后续消息可通过显式 `BETA-0001` 绑定目标任务。
 - 任务 context 已保存任务卡 `message_id`，后续进展优先更新同一张 interactive card。
 - 中文说明、安装、维护、路线图、飞书连接器文档。
-- 单元测试 80 项通过。
+- 单元测试 83 项通过。
 
 ## 当前边界
 
@@ -108,6 +109,7 @@ stock-agent-orchestrator beta-smoke --config configs/beta.example.toml
 stock-agent-orchestrator webhook-smoke --config configs/beta.example.toml
 stock-agent-orchestrator init-beta-live-config --output configs/beta.live.toml
 stock-agent-orchestrator beta-validation-guide --config configs/beta.live.toml --callback-url https://your-public-domain.example --format markdown
+stock-agent-orchestrator beta-live-runbook --config configs/beta.live.toml --callback-url https://your-public-domain.example --format markdown
 stock-agent-orchestrator beta-live-preflight --config configs/beta.live.toml --callback-url https://your-public-domain.example
 stock-agent-orchestrator beta-callback-probe --config configs/beta.live.toml --callback-url https://your-public-domain.example --format markdown
 ```

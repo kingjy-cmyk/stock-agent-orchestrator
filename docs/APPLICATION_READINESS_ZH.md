@@ -44,7 +44,7 @@ stock-agent-orchestrator application-readiness --format markdown
 
 1. 运行 `init-beta-live-config` 生成本地 `configs/beta.live.toml`，再填入真实值。
 2. 运行 `beta-validation-guide`，确认是否允许进入真实 beta。
-3. 跑通 `beta-live-preflight`。
+3. 运行 `beta-live-runbook`，生成真实 beta 群操作手册和停止条件。
 4. 启动 `run-webhook --allow-live-send`。
 5. 运行 `beta-callback-probe`，确认公网 `/healthz` 和 `/webhook` challenge 可用。
 6. 在 beta 群发送 `@小C-beta 今天先给我一份候选池`。
@@ -59,6 +59,10 @@ stock-agent-orchestrator init-beta-live-config --output configs/beta.live.toml
 
 ```bash
 stock-agent-orchestrator beta-validation-guide --config configs/beta.live.toml --callback-url https://your-public-domain.example --format markdown
+```
+
+```bash
+stock-agent-orchestrator beta-live-runbook --config configs/beta.live.toml --callback-url https://your-public-domain.example --format markdown
 ```
 
 真实 beta 群跑通后收集证据：
