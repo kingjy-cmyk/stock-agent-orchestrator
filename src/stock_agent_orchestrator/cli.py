@@ -43,6 +43,11 @@ from stock_agent_orchestrator.services.beta_live_config_status import (
     beta_live_config_status_to_markdown,
     inspect_beta_live_config,
 )
+from stock_agent_orchestrator.services.beta_live_evidence_rehearsal import (
+    beta_live_evidence_rehearsal_to_dict,
+    beta_live_evidence_rehearsal_to_markdown,
+    run_beta_live_evidence_rehearsal,
+)
 from stock_agent_orchestrator.services.beta_live_preflight import (
     preflight_report_to_dict,
     preflight_report_to_markdown,
@@ -220,6 +225,12 @@ def build_parser() -> argparse.ArgumentParser:
     beta_live_readiness_bundle.add_argument("--healthz-json", default=".runtime/healthz.json")
     beta_live_readiness_bundle.add_argument("--report-output", default="docs/BETA_VALIDATION_REPORT_ZH.md")
     beta_live_readiness_bundle.add_argument("--format", choices=["json", "markdown"], default="markdown")
+
+    beta_live_evidence_rehearsal = sub.add_parser("beta-live-evidence-rehearsal")
+    beta_live_evidence_rehearsal.add_argument("--runtime-dir", default=".runtime/beta-evidence-rehearsal")
+    beta_live_evidence_rehearsal.add_argument("--callback-url", default="https://agent-beta.example.com")
+    beta_live_evidence_rehearsal.add_argument("--commit", default="rehearsal-commit")
+    beta_live_evidence_rehearsal.add_argument("--format", choices=["json", "markdown"], default="markdown")
 
     beta_validation_report = sub.add_parser("beta-validation-report")
     beta_validation_report.add_argument("--config", default="configs/beta.live.toml")
@@ -602,6 +613,22 @@ def main() -> None:
         )
         print(rendered)
         if not bundle.ok:
+            raise SystemExit(1)
+        return
+
+    if args.command == "beta-live-evidence-rehearsal":
+        rehearsal = run_beta_live_evidence_rehearsal(
+            runtime_dir=Path(args.runtime_dir),
+            callback_url=args.callback_url,
+            commit=args.commit,
+        )
+        rendered = (
+            beta_live_evidence_rehearsal_to_markdown(rehearsal)
+            if args.format == "markdown"
+            else json.dumps(beta_live_evidence_rehearsal_to_dict(rehearsal), ensure_ascii=False, indent=2)
+        )
+        print(rendered)
+        if not rehearsal.ok:
             raise SystemExit(1)
         return
 

@@ -28,6 +28,7 @@
 - [飞书 Beta Live Runbook](docs/BETA_LIVE_RUNBOOK_ZH.md)
 - [飞书 Beta Live 启动包](docs/BETA_LIVE_LAUNCH_PACKET_ZH.md)
 - [飞书 Beta Live 总检查包](docs/BETA_LIVE_READINESS_BUNDLE_ZH.md)
+- [飞书 Beta 证据收集彩排](docs/BETA_LIVE_EVIDENCE_REHEARSAL_ZH.md)
 - [Beta Live 环境变量配置](docs/BETA_LIVE_ENV_ZH.md)
 - [飞书 Beta 验证报告模板](docs/BETA_VALIDATION_REPORT_TEMPLATE_ZH.md)
 - [中文产品介绍](docs/INTRO_ZH.md)
@@ -63,7 +64,7 @@ Current status:
 
 - local install/demo/smoke paths are documented
 - Feishu connector has a safe beta preflight gate
-- 102 unit tests pass locally
+- 105 unit tests pass locally
 - real Feishu beta validation is still pending
 
 Current readiness can be checked by command:
@@ -81,6 +82,7 @@ For the application narrative and demo checklist, see:
 - [飞书 Beta Live Runbook](docs/BETA_LIVE_RUNBOOK_ZH.md)
 - [飞书 Beta Live 启动包](docs/BETA_LIVE_LAUNCH_PACKET_ZH.md)
 - [飞书 Beta Live 总检查包](docs/BETA_LIVE_READINESS_BUNDLE_ZH.md)
+- [飞书 Beta 证据收集彩排](docs/BETA_LIVE_EVIDENCE_REHEARSAL_ZH.md)
 - [飞书 Beta 验证报告模板](docs/BETA_VALIDATION_REPORT_TEMPLATE_ZH.md)
 
 ## Product Shape
@@ -299,6 +301,12 @@ Generate the readiness bundle to review all beta gates in one report:
 stock-agent-orchestrator beta-live-readiness-bundle --config configs/beta.live.toml --callback-url https://your-public-domain.example --format markdown
 ```
 
+Rehearse evidence collection locally. This writes ignored rehearsal artifacts only and does not prove real Feishu beta success:
+
+```bash
+stock-agent-orchestrator beta-live-evidence-rehearsal --format markdown
+```
+
 After a real beta run, collect `/healthz` and generate a validation report:
 
 ```bash
@@ -329,6 +337,7 @@ Supported sample formats:
 - 飞书 Beta Live Runbook: [docs/BETA_LIVE_RUNBOOK_ZH.md](docs/BETA_LIVE_RUNBOOK_ZH.md)
 - 飞书 Beta Live 启动包: [docs/BETA_LIVE_LAUNCH_PACKET_ZH.md](docs/BETA_LIVE_LAUNCH_PACKET_ZH.md)
 - 飞书 Beta Live 总检查包: [docs/BETA_LIVE_READINESS_BUNDLE_ZH.md](docs/BETA_LIVE_READINESS_BUNDLE_ZH.md)
+- 飞书 Beta 证据收集彩排: [docs/BETA_LIVE_EVIDENCE_REHEARSAL_ZH.md](docs/BETA_LIVE_EVIDENCE_REHEARSAL_ZH.md)
 - Beta Live 环境变量配置: [docs/BETA_LIVE_ENV_ZH.md](docs/BETA_LIVE_ENV_ZH.md)
 - 飞书优先原则: [docs/FEISHU_FIRST_ZH.md](docs/FEISHU_FIRST_ZH.md)
 - 飞书连接器架构: [docs/FEISHU_CONNECTOR_ZH.md](docs/FEISHU_CONNECTOR_ZH.md)
