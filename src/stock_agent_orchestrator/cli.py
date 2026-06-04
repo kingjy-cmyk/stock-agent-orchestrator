@@ -48,6 +48,11 @@ from stock_agent_orchestrator.services.beta_live_evidence_rehearsal import (
     beta_live_evidence_rehearsal_to_markdown,
     run_beta_live_evidence_rehearsal,
 )
+from stock_agent_orchestrator.services.beta_live_intake_checklist import (
+    beta_live_intake_checklist_to_dict,
+    beta_live_intake_checklist_to_markdown,
+    build_beta_live_intake_checklist,
+)
 from stock_agent_orchestrator.services.beta_live_preflight import (
     preflight_report_to_dict,
     preflight_report_to_markdown,
@@ -231,6 +236,10 @@ def build_parser() -> argparse.ArgumentParser:
     beta_live_evidence_rehearsal.add_argument("--callback-url", default="https://agent-beta.example.com")
     beta_live_evidence_rehearsal.add_argument("--commit", default="rehearsal-commit")
     beta_live_evidence_rehearsal.add_argument("--format", choices=["json", "markdown"], default="markdown")
+
+    beta_live_intake_checklist = sub.add_parser("beta-live-intake-checklist")
+    beta_live_intake_checklist.add_argument("--shell", choices=["powershell", "bash"], default="powershell")
+    beta_live_intake_checklist.add_argument("--format", choices=["json", "markdown"], default="markdown")
 
     beta_validation_report = sub.add_parser("beta-validation-report")
     beta_validation_report.add_argument("--config", default="configs/beta.live.toml")
@@ -630,6 +639,16 @@ def main() -> None:
         print(rendered)
         if not rehearsal.ok:
             raise SystemExit(1)
+        return
+
+    if args.command == "beta-live-intake-checklist":
+        checklist = build_beta_live_intake_checklist(shell=args.shell)
+        rendered = (
+            beta_live_intake_checklist_to_markdown(checklist)
+            if args.format == "markdown"
+            else json.dumps(beta_live_intake_checklist_to_dict(checklist), ensure_ascii=False, indent=2)
+        )
+        print(rendered)
         return
 
     if args.command == "beta-validation-report":

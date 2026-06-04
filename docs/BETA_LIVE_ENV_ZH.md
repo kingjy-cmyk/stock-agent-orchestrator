@@ -13,6 +13,12 @@
 
 ## 需要的环境变量
 
+先生成采集清单，确认每个值从哪里来、是否敏感、填错会有什么风险：
+
+```bash
+stock-agent-orchestrator beta-live-intake-checklist --shell powershell --format markdown
+```
+
 可以直接生成模板：
 
 ```bash

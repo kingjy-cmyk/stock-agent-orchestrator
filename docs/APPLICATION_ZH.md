@@ -40,6 +40,7 @@
 - Live Feishu client 安全骨架。
 - Gateway / Operation / Ingress Queue / Worker 分层。
 - `send_allowlist`、`verification_token`、去重、状态健康检查、operation error 记录。
+- `beta-live-intake-checklist` 真实 beta 配置采集清单，标明字段来源、环境变量、敏感性和停止条件。
 - `beta-live-config-from-env` 可从环境变量生成 ignored 的真实 beta 配置。
 - `beta-live-config-status` 本地真实配置状态检查，输出脱敏字段状态。
 - `beta-live-prep-dry-run` 本地验证 beta live 准备链路，不触达真实飞书。
@@ -54,7 +55,7 @@
 - agent 后续消息可通过显式 `BETA-0001` 绑定目标任务。
 - 任务 context 已保存任务卡 `message_id`，后续进展优先更新同一张 interactive card。
 - 中文说明、安装、维护、路线图、飞书连接器文档。
-- 单元测试 105 项通过。
+- 单元测试 109 项通过。
 
 ## 当前边界
 
@@ -113,6 +114,7 @@ stock-agent-orchestrator doctor
 stock-agent-orchestrator demo
 stock-agent-orchestrator beta-smoke --config configs/beta.example.toml
 stock-agent-orchestrator webhook-smoke --config configs/beta.example.toml
+stock-agent-orchestrator beta-live-intake-checklist --shell powershell --format markdown
 stock-agent-orchestrator beta-live-prep-dry-run --format markdown
 stock-agent-orchestrator init-beta-live-config --output configs/beta.live.toml
 stock-agent-orchestrator beta-live-config-from-env --output configs/beta.live.toml --overwrite --format markdown
@@ -132,4 +134,4 @@ stock-agent-orchestrator beta-callback-probe --config configs/beta.live.toml --c
 
 Codex 在这个项目中承担了长期工程 owner 的角色：从需求澄清、架构拆分、连接器对标、配置安全、测试覆盖，到 GitHub 仓库维护和申请材料沉淀，都是按阶段推进并提交的。
 
-当前版本已实现本地可运行 CLI、飞书 webhook MVP、安全 preflight、任务状态机、fake beta 验证、真实 beta 启动包、真实 beta 总检查包、证据收集彩排和完整中文文档。下一步会进入真实飞书 beta 群验证。
+当前版本已实现本地可运行 CLI、飞书 webhook MVP、安全 preflight、任务状态机、fake beta 验证、真实 beta 配置采集清单、真实 beta 启动包、真实 beta 总检查包、证据收集彩排和完整中文文档。下一步会进入真实飞书 beta 群验证。
