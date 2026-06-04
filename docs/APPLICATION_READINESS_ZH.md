@@ -46,10 +46,11 @@ stock-agent-orchestrator application-readiness --format markdown
 2. 运行 `beta-validation-guide`，确认是否允许进入真实 beta。
 3. 跑通 `beta-live-preflight`。
 4. 启动 `run-webhook --allow-live-send`。
-5. 在 beta 群发送 `@小C-beta 今天先给我一份候选池`。
-6. 保存 `/healthz` 到 `.runtime/healthz.json`。
-7. 生成 `docs/BETA_VALIDATION_REPORT_ZH.md`。
-8. 补任务卡截图或录屏路径。
+5. 运行 `beta-callback-probe`，确认公网 `/healthz` 和 `/webhook` challenge 可用。
+6. 在 beta 群发送 `@小C-beta 今天先给我一份候选池`。
+7. 保存 `/healthz` 到 `.runtime/healthz.json`。
+8. 生成 `docs/BETA_VALIDATION_REPORT_ZH.md`。
+9. 补任务卡截图或录屏路径。
 
 推荐先运行：
 

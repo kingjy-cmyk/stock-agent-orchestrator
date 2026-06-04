@@ -66,6 +66,12 @@ preflight 通过后，再启动真实发送服务：
 stock-agent-orchestrator run-webhook --config configs/beta.live.toml --allow-live-send
 ```
 
+启动后先探测公网 callback：
+
+```bash
+stock-agent-orchestrator beta-callback-probe --config configs/beta.live.toml --callback-url https://your-public-domain.example --format markdown
+```
+
 把 preflight 输出里的 `webhook_url` 填到飞书开放平台事件订阅 callback。
 
 然后在 beta 群发一条最小委托：
@@ -83,7 +89,7 @@ stock-agent-orchestrator run-webhook --config configs/beta.live.toml --allow-liv
 
 ## 当前限制
 
-- 该命令只做本地静态准入检查，不探测公网 URL 是否真的可访问。
+- 该命令只做本地静态准入检查，不探测公网 URL 是否真的可访问；公网可达性由 `beta-callback-probe` 验证。
 - 已支持飞书 event callback verification token 校验。
 - 已支持基于 `encrypt_key` 的 `X-Lark-Signature` 请求签名校验。
 - 已支持飞书 encrypt payload 解密。

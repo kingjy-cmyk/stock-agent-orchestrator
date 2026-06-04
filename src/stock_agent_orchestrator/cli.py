@@ -17,6 +17,11 @@ from stock_agent_orchestrator.services.application_readiness import (
     readiness_report_to_markdown,
     run_application_readiness,
 )
+from stock_agent_orchestrator.services.beta_callback_probe import (
+    callback_probe_report_to_dict,
+    callback_probe_report_to_markdown,
+    run_beta_callback_probe,
+)
 from stock_agent_orchestrator.services.beta_live_preflight import (
     preflight_report_to_dict,
     preflight_report_to_markdown,
@@ -149,6 +154,12 @@ def build_parser() -> argparse.ArgumentParser:
     beta_validation_guide.add_argument("--healthz-json", default=".runtime/healthz.json")
     beta_validation_guide.add_argument("--report-output", default="docs/BETA_VALIDATION_REPORT_ZH.md")
     beta_validation_guide.add_argument("--format", choices=["json", "markdown"], default="markdown")
+
+    beta_callback_probe = sub.add_parser("beta-callback-probe")
+    beta_callback_probe.add_argument("--config", default="configs/beta.live.toml")
+    beta_callback_probe.add_argument("--callback-url", required=True)
+    beta_callback_probe.add_argument("--challenge", default="stock-agent-orchestrator-probe")
+    beta_callback_probe.add_argument("--format", choices=["json", "markdown"], default="markdown")
 
     render_card = sub.add_parser("render-task-card")
     render_card.add_argument("--db", default=str(DEFAULT_DB))
@@ -416,6 +427,22 @@ def main() -> None:
         )
         print(rendered)
         if not guide.ready_for_live_beta:
+            raise SystemExit(1)
+        return
+
+    if args.command == "beta-callback-probe":
+        report = run_beta_callback_probe(
+            config=load_config(Path(args.config)),
+            callback_url=args.callback_url,
+            challenge=args.challenge,
+        )
+        rendered = (
+            callback_probe_report_to_markdown(report)
+            if args.format == "markdown"
+            else json.dumps(callback_probe_report_to_dict(report), ensure_ascii=False, indent=2)
+        )
+        print(rendered)
+        if not report.ok:
             raise SystemExit(1)
         return
 

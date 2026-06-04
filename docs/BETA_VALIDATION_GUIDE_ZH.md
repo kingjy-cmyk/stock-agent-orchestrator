@@ -37,11 +37,18 @@ stock-agent-orchestrator beta-validation-guide --config configs/beta.live.toml -
 2. 运行 `beta-validation-guide`。
 3. 如果向导显示 `fix_preflight_before_live_beta`，先修配置。
 4. 如果向导显示 `run_live_beta_and_collect_evidence`，再启动 `run-webhook --allow-live-send`。
-5. 在飞书开放平台配置 event subscription。
-6. 在 beta 群发送一次委托。
-7. 保存 `/healthz` JSON。
-8. 生成 `docs/BETA_VALIDATION_REPORT_ZH.md`。
-9. 再运行 `application-readiness`。
+5. 运行 `beta-callback-probe`，确认公网 `/healthz` 和 `/webhook` challenge 都可用。
+6. 在飞书开放平台配置 event subscription。
+7. 在 beta 群发送一次委托。
+8. 保存 `/healthz` JSON。
+9. 生成 `docs/BETA_VALIDATION_REPORT_ZH.md`。
+10. 再运行 `application-readiness`。
+
+公网 callback 探测命令：
+
+```bash
+stock-agent-orchestrator beta-callback-probe --config configs/beta.live.toml --callback-url https://your-public-domain.example --format markdown
+```
 
 ## 验收成功标准
 

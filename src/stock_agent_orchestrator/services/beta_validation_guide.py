@@ -147,6 +147,7 @@ def _commands(
     return [
         f"stock-agent-orchestrator beta-live-preflight --config {config_path} --callback-url {callback_url} --format markdown",
         f"stock-agent-orchestrator run-webhook --config {config_path} --db {db_path} --allow-live-send",
+        f"stock-agent-orchestrator beta-callback-probe --config {config_path} --callback-url {callback_url} --format markdown",
         f"curl {callback_url.rstrip('/')}/healthz > {healthz_json_path}",
         (
             "stock-agent-orchestrator beta-validation-report "
