@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 
 from stock_agent_orchestrator.config import load_config
@@ -59,6 +60,55 @@ class BetaOrchestratorTests(unittest.TestCase):
             self.assertFalse(result.handled)
             self.assertEqual(result.reason, "chat_not_allowed")
             self.assertEqual(client.sent_messages, [])
+
+    def test_agent_followup_updates_existing_task_instead_of_creating_new_one(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            config = load_config(Path("configs/beta.example.toml"))
+            config = replace(
+                config,
+                feishu=replace(
+                    config.feishu,
+                    owner_open_id="owner-open-id",
+                    data_open_id="data-open-id",
+                    analyst_open_id="analyst-open-id",
+                ),
+            )
+            store = SQLiteTaskStore(Path(tmp) / "beta.db")
+            client = FakeFeishuClient()
+            service = BetaOrchestratorService(config=config, store=store, feishu_client=client)
+
+            created = service.process_message(
+                FeishuMessageEvent(
+                    event_id="evt-1",
+                    chat_id="replace-me",
+                    sender_open_id="user-1",
+                    sender_name="BOOS",
+                    text="@小C-beta 今天先给我一份候选池",
+                    mentions=("owner-open-id",),
+                    message_id="msg-1",
+                )
+            )
+            updated = service.process_message(
+                FeishuMessageEvent(
+                    event_id="evt-2",
+                    chat_id="replace-me",
+                    sender_open_id="analyst-open-id",
+                    sender_name="小巴-beta",
+                    text="候选池已筛出，RSI<35 共 3 只",
+                    mentions=(),
+                    message_id="msg-2",
+                )
+            )
+
+            self.assertTrue(created.handled)
+            self.assertTrue(updated.handled)
+            self.assertEqual(updated.task_id, "BETA-0001")
+            self.assertEqual(len(store.list_tasks()), 1)
+            task = store.load_task("BETA-0001")
+            self.assertIsNotNone(task)
+            self.assertEqual(task.status.value, "scanning")
+            self.assertIn("候选池已筛出", client.sent_messages[-1].text)
+            self.assertEqual(len(client.sent_messages), 2)
 
 
 if __name__ == "__main__":

@@ -13,7 +13,7 @@ from stock_agent_orchestrator.connectors.feishu import (
     FeishuOperationKind,
     SentFeishuMessage,
 )
-from stock_agent_orchestrator.domain.models import Task
+from stock_agent_orchestrator.domain.models import AgentRole, Task, TaskStatus
 from stock_agent_orchestrator.persistence.sqlite_store import SQLiteTaskStore
 from stock_agent_orchestrator.services.task_card import render_task_card_markdown
 from stock_agent_orchestrator.services.task_engine import TaskEngine
@@ -52,6 +52,10 @@ class BetaOrchestratorService:
         if self.config.project.environment != "beta" or self.config.project.mode != "active":
             return BetaProcessResult(False, reason="not_beta_active")
 
+        self.store.init_db()
+        if actor := self._agent_actor(event.sender_open_id):
+            return self._process_agent_update(event, actor)
+
         command = self.adapter.parse(
             FeishuEnvelope(
                 sender_name=event.sender_name,
@@ -62,7 +66,6 @@ class BetaOrchestratorService:
         if command is None:
             return BetaProcessResult(False, reason="not_delegation")
 
-        self.store.init_db()
         task = self.engine.create_task(
             task_id=self._next_task_id(),
             title=command.title,
@@ -77,12 +80,30 @@ class BetaOrchestratorService:
             },
         )
         self.store.save_task(task)
+        return self._send_task_card(event.chat_id, task)
+
+    def _process_agent_update(self, event: FeishuMessageEvent, actor: AgentRole) -> BetaProcessResult:
+        task = self._latest_open_task(event.chat_id)
+        if task is None:
+            return BetaProcessResult(False, reason="no_open_task")
+        task.context["last_agent_message_id"] = event.message_id
+        task.context["last_agent_event_id"] = event.event_id
+        task = self.engine.advance_task(
+            task,
+            actor=actor,
+            message=event.text,
+            within_known_rules=True,
+        )
+        self.store.save_task(task)
+        return self._send_task_card(event.chat_id, task)
+
+    def _send_task_card(self, chat_id: str, task: Task) -> BetaProcessResult:
         try:
             sent = self.operation_gateway.apply(
                 [
                     FeishuOperation(
                         kind=FeishuOperationKind.SEND_CARD,
-                        chat_id=event.chat_id,
+                        chat_id=chat_id,
                         text=render_task_card_markdown(task),
                         metadata={"task_id": task.task_id},
                     )
@@ -95,3 +116,20 @@ class BetaOrchestratorService:
     def _next_task_id(self) -> str:
         existing = self.store.list_tasks()
         return f"BETA-{len(existing) + 1:04d}"
+
+    def _agent_actor(self, sender_open_id: str) -> AgentRole | None:
+        sender = sender_open_id.strip()
+        if sender == self.config.feishu.data_open_id.strip():
+            return AgentRole.XIAOZHI
+        if sender == self.config.feishu.analyst_open_id.strip():
+            return AgentRole.XIAOBA
+        return None
+
+    def _latest_open_task(self, chat_id: str) -> Task | None:
+        for task in reversed(self.store.list_tasks()):
+            if task.context.get("chat_id") != chat_id:
+                continue
+            if task.status in {TaskStatus.CLOSED, TaskStatus.RECORDED}:
+                continue
+            return task
+        return None

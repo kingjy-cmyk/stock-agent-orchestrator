@@ -123,6 +123,20 @@ stock-agent-orchestrator run-webhook --config configs/beta.live.toml --allow-liv
 - beta 群出现 `BETA-0001` 任务卡。
 - 任务卡展示目标、意图、状态、当前责任人、审批状态。
 
+### 4.1 Agent 后续消息
+
+让小巴-beta 在同一 beta 群回复：
+
+```text
+候选池已筛出，RSI<35 共 3 只
+```
+
+期望：
+
+- 不创建 `BETA-0002`。
+- `BETA-0001` 状态推进到 `scanning`。
+- 群里出现更新后的任务卡 markdown。
+
 ### 5. 检查健康状态
 
 访问：

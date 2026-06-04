@@ -107,7 +107,7 @@ Stage 2B 剩余：
 
 ### Stage 3：Task Card Update
 
-状态：`待开始`
+状态：`进行中`
 
 目标：
 
@@ -119,6 +119,19 @@ Stage 2B 剩余：
 - 不重复建任务。
 - 状态从 planned 进入 scanning/enriching/analyzing/following_up。
 - 任务卡能展示当前责任人变化。
+
+已实现 MVP：
+
+- 小智-beta / 小巴-beta 的后续消息会更新同一 beta 群最新未关闭任务。
+- 后续消息不会新建 `BETA-0002`。
+- 小巴消息可把每日候选池任务从 `planned` 推进到 `scanning`。
+- 更新后会发送新的任务卡 markdown 回执。
+
+仍缺：
+
+- 真正的飞书 interactive card `update_card`。
+- 根据 reply/thread/message_id 精准绑定任务。
+- 小C-beta 自身回执的防循环策略还需真实 beta 验证。
 
 ### Stage A：Application Materials
 

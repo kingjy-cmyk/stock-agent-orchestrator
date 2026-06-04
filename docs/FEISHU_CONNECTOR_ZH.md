@@ -115,12 +115,14 @@ stock-agent-orchestrator beta-live-preflight --config configs/beta.live.toml --c
 - `GuardedOperationGateway` 会拒绝不在 `send_allowlist` 内的 chat_id。
 - `FeishuWebhookGateway` 会在配置 `verification_token` 后拒绝 token 不匹配的 callback。
 - operation 发送失败会记录到 gateway，并让业务结果返回 `operation_error`，避免 worker 直接崩溃。
+- 小智-beta / 小巴-beta 的后续消息可推进同一任务，并发送更新后的任务卡 markdown。
 
 当前限制：
 
 - 去重和错误记录是内存级，服务重启后会丢失。
 - 还没有飞书 encrypt key 解密和请求签名校验。
 - 还没有真正的 rate limit，只有限制入口队列长度。
+- 还没有真正的 interactive card update，目前是追加发送更新后的 markdown 任务卡。
 
 ## 安全边界
 
