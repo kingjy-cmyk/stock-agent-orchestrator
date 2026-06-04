@@ -22,6 +22,7 @@
 中文文档入口：
 
 - [中文产品介绍](docs/INTRO_ZH.md)
+- [飞书优先原则](docs/FEISHU_FIRST_ZH.md)
 - [中文安装与快速验证](docs/INSTALL_ZH.md)
 - [中文流程与最终目标](docs/WORKFLOW_ZH.md)
 - [中文维护与审批手册](docs/MAINTENANCE_ZH.md)
@@ -98,11 +99,13 @@ Quick environment check:
 stock-agent-orchestrator doctor
 ```
 
-Run a bundled local demo:
+Run a bundled local demo as an installation preflight only:
 
 ```bash
 stock-agent-orchestrator demo
 ```
+
+Product validation must happen through Feishu. Local demo proves the package can run; it does not prove the transparent multi-agent workflow is usable.
 
 ## CLI
 
@@ -167,14 +170,16 @@ Supported sample formats:
 
 ## Rollout Plan
 
-1. shadow mode against the current production Feishu group
-2. active testing with `小C-beta / 小智-beta / 小巴-beta`
-3. gradual promotion of the new task-owner logic into the current `小C`
+1. local preflight only: install, doctor, demo
+2. read-only Feishu Shadow Mode: observe messages and build task state without speaking
+3. active Feishu beta group with `小C-beta / 小智-beta / 小巴-beta`
+4. gradual promotion of the new task-owner logic into the current `小C`
 
 ## What To Read Next
 
 - English architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - English rollout: [docs/ROLLOUT.md](docs/ROLLOUT.md)
+- 飞书优先原则: [docs/FEISHU_FIRST_ZH.md](docs/FEISHU_FIRST_ZH.md)
 - 中文安装/验证: [docs/INSTALL_ZH.md](docs/INSTALL_ZH.md)
 - 中文产品说明: [docs/INTRO_ZH.md](docs/INTRO_ZH.md)
 - 中文全流程: [docs/WORKFLOW_ZH.md](docs/WORKFLOW_ZH.md)
