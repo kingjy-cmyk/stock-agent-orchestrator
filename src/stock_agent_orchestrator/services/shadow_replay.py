@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import asdict, dataclass, field
-from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -36,6 +36,24 @@ class ShadowReplayReport:
     advanced_events: int
     findings: list[ShadowFinding]
     tasks: list[dict[str, Any]]
+
+
+RELAY_ACTION_PATTERN = re.compile(
+    r"^(?P<logged_at>\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}) surface action: .*?"
+    r"surface=(?P<surface>\S+) .*?"
+    r"actor=(?P<actor>\S+) .*?"
+    r"kind=(?P<kind>\S+) .*?"
+    r"message=(?P<message_id>\S+) .*?"
+    r"message_time=(?P<message_time>\S*) .*?"
+    r'text="(?P<text>(?:\\.|[^"\\])*)"',
+)
+
+ACTOR_ALIASES = {
+    "ou_bd0520ebd38cb4b8cae1f780677a95ae": "BOOS",
+    "ou_116be0127b77068c571a2123f52c38c4": "小智",
+    "ou_3f9a524344b25fdad435fb1c499f8f41": "小巴",
+    "ou_99f804d2e8b10e12002ba95c2dbbf886": "小C",
+}
 
 
 class ShadowReplayService:
@@ -135,6 +153,63 @@ def load_shadow_messages(path: Path) -> Iterable[ShadowMessage]:
             yield ShadowMessage(sender_name="", text=text, mentions_owner=mentions_xiaoc(text))
 
 
+def extract_relay_log_messages(log_path: Path, *, limit: int = 80) -> list[ShadowMessage]:
+    messages: list[ShadowMessage] = []
+    seen_message_ids: set[str] = set()
+    for line in log_path.read_text(encoding="utf-8-sig", errors="replace").splitlines():
+        match = RELAY_ACTION_PATTERN.search(line)
+        if match is None:
+            continue
+        kind = match.group("kind").strip()
+        if kind != "surface.message.text":
+            continue
+        message_id = match.group("message_id").strip()
+        if message_id in seen_message_ids:
+            continue
+        seen_message_ids.add(message_id)
+        text = decode_go_quoted_text(match.group("text")).strip()
+        if not text:
+            continue
+        actor = match.group("actor").strip()
+        sender_name = ACTOR_ALIASES.get(actor, "用户" if actor.startswith("ou_") else "unknown")
+        surface = match.group("surface").strip()
+        messages.append(
+            ShadowMessage(
+                sender_name=sender_name,
+                text=text,
+                created_at=match.group("message_time").strip() or match.group("logged_at").strip(),
+                mentions_owner=explicitly_mentions_xiaoc(text) or (":user:" in surface and sender_name == "BOOS"),
+                raw={
+                    "source": "codex-remote-relayd.log",
+                    "kind": kind,
+                    "actor_alias": sender_name,
+                    "message_ref": f"msg-{len(messages) + 1:04d}",
+                },
+            )
+        )
+    if limit > 0:
+        return messages[-limit:]
+    return messages
+
+
+def write_shadow_messages_jsonl(messages: Iterable[ShadowMessage], output_path: Path) -> None:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    rows = []
+    for message in messages:
+        rows.append(
+            json.dumps(
+                {
+                    "sender_name": message.sender_name,
+                    "text": message.text,
+                    "created_at": message.created_at,
+                    "mentions_owner": message.mentions_owner,
+                },
+                ensure_ascii=False,
+            )
+        )
+    output_path.write_text("\n".join(rows) + ("\n" if rows else ""), encoding="utf-8")
+
+
 def shadow_message_from_mapping(payload: dict[str, Any]) -> ShadowMessage:
     text = str(
         payload.get("text")
@@ -159,6 +234,31 @@ def shadow_message_from_mapping(payload: dict[str, Any]) -> ShadowMessage:
         mentions_owner=mentions_owner,
         raw=payload,
     )
+
+
+def decode_go_quoted_text(value: str) -> str:
+    value = value.replace('\\"', '"').replace("\\\\", "\\")
+    raw = bytearray()
+    i = 0
+    while i < len(value):
+        if value[i : i + 2] == "\\x" and i + 3 < len(value):
+            try:
+                raw.append(int(value[i + 2 : i + 4], 16))
+                i += 4
+                continue
+            except ValueError:
+                pass
+        if value[i : i + 2] == "\\n":
+            raw.append(ord("\n"))
+            i += 2
+            continue
+        if value[i : i + 2] == "\\t":
+            raw.append(ord("\t"))
+            i += 2
+            continue
+        raw.extend(value[i].encode("utf-8", errors="replace"))
+        i += 1
+    return raw.decode("utf-8", errors="replace")
 
 
 def infer_agent_role(sender_name: str, text: str) -> AgentRole | None:
@@ -256,6 +356,10 @@ def report_to_markdown(report: ShadowReplayReport) -> str:
 
 def mentions_xiaoc(text: str) -> bool:
     return "@小C" in text or "小C" in text or "@xiaoc" in text.lower()
+
+
+def explicitly_mentions_xiaoc(text: str) -> bool:
+    return "@小C" in text or "@xiaoc" in text.lower()
 
 
 def is_known_rule_message(text: str) -> bool:

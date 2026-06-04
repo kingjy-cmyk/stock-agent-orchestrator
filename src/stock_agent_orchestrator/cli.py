@@ -9,7 +9,13 @@ from stock_agent_orchestrator.bridges.current_stack import CurrentStackBridge
 from stock_agent_orchestrator.domain.models import AgentRole, TaskIntent
 from stock_agent_orchestrator.persistence.sqlite_store import SQLiteTaskStore
 from stock_agent_orchestrator.services.rule_memory import RuleMemoryService
-from stock_agent_orchestrator.services.shadow_replay import ShadowReplayService, report_to_dict, report_to_markdown
+from stock_agent_orchestrator.services.shadow_replay import (
+    ShadowReplayService,
+    extract_relay_log_messages,
+    report_to_dict,
+    report_to_markdown,
+    write_shadow_messages_jsonl,
+)
 from stock_agent_orchestrator.services.task_engine import TaskEngine
 
 
@@ -62,6 +68,11 @@ def build_parser() -> argparse.ArgumentParser:
     shadow.add_argument("--input", required=True)
     shadow.add_argument("--report", default="")
     shadow.add_argument("--format", choices=["json", "markdown"], default="json")
+
+    extract = sub.add_parser("extract-relay-log")
+    extract.add_argument("--log-file", required=True)
+    extract.add_argument("--output", required=True)
+    extract.add_argument("--limit", type=int, default=80)
 
     return parser
 
@@ -186,6 +197,13 @@ def main() -> None:
             Path(args.report).parent.mkdir(parents=True, exist_ok=True)
             Path(args.report).write_text(rendered, encoding="utf-8")
         print(rendered)
+        return
+
+    if args.command == "extract-relay-log":
+        messages = extract_relay_log_messages(Path(args.log_file), limit=args.limit)
+        write_shadow_messages_jsonl(messages, Path(args.output))
+        print(Path(args.output).resolve())
+        print(len(messages))
         return
 
 

@@ -5,7 +5,12 @@ from pathlib import Path
 
 from stock_agent_orchestrator.domain.models import TaskStatus
 from stock_agent_orchestrator.persistence.sqlite_store import SQLiteTaskStore
-from stock_agent_orchestrator.services.shadow_replay import ShadowReplayService, report_to_markdown
+from stock_agent_orchestrator.services.shadow_replay import (
+    ShadowReplayService,
+    extract_relay_log_messages,
+    report_to_markdown,
+    write_shadow_messages_jsonl,
+)
 
 
 class ShadowReplayTests(unittest.TestCase):
@@ -43,6 +48,31 @@ class ShadowReplayTests(unittest.TestCase):
 
             self.assertIn("silent_break", markdown)
             self.assertEqual(report.findings[0].severity, "warning")
+
+    def test_extract_relay_log_messages_sanitizes_actor_and_text(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            log = Path(tmp) / "relay.log"
+            log.write_text(
+                '2026/06/04 01:54:18 surface action: surface=feishu:小C:chat:oc_xxx '
+                'chat=oc_xxx actor=ou_bd0520ebd38cb4b8cae1f780677a95ae kind=surface.message.text '
+                'message=om_xxx instance= thread= verdict=current reason= event=evt request= '
+                'message_time=2026-06-03T17:54:16.786Z menu_time= card_lifecycle= text="@小C 研究一下七层数据"\n'
+                '2026/06/04 01:55:18 surface action: surface=feishu:小C:chat:oc_xxx '
+                'chat=oc_xxx actor=ou_116be0127b77068c571a2123f52c38c4 kind=surface.message.text '
+                'message=om_yyy instance= thread= verdict=current reason= event=evt request= '
+                'message_time=2026-06-03T17:55:16.786Z menu_time= card_lifecycle= text="\\xe4\\xb8\\x83\\xe5\\xb1\\x82\\xe6\\x95\\xb0\\xe6\\x8d\\xae\\xe5\\xb7\\xb2\\xe8\\xa1\\xa5\\xe9\\xbd\\x90"\n',
+                encoding="utf-8",
+            )
+            output = Path(tmp) / "messages.jsonl"
+
+            messages = extract_relay_log_messages(log)
+            write_shadow_messages_jsonl(messages, output)
+
+            self.assertEqual(len(messages), 2)
+            self.assertEqual(messages[0].sender_name, "BOOS")
+            self.assertEqual(messages[1].sender_name, "小智")
+            self.assertEqual(messages[1].text, "七层数据已补齐")
+            self.assertNotIn("ou_", output.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

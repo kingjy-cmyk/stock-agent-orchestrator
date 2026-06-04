@@ -22,11 +22,16 @@ class TaskCommand:
 
 class FeishuControlAdapter:
     def parse(self, envelope: FeishuEnvelope) -> TaskCommand | None:
+        if envelope.sender_name.strip() in {"小C", "小智", "小巴"}:
+            return None
+
         if not envelope.mentions_owner:
             return None
 
         text = envelope.text.strip()
         if not text:
+            return None
+        if not self._looks_like_delegation(text):
             return None
 
         intent = self._detect_intent(text)
@@ -52,3 +57,33 @@ class FeishuControlAdapter:
             short = short[:47] + "…"
         return f"{prefix}: {short}"
 
+    def _looks_like_delegation(self, text: str) -> bool:
+        lowered = text.lower()
+        if text in {"1", "测试", "能收到吗", "能收到吗？", "现在能收到吧"}:
+            return False
+        keywords = (
+            "帮我",
+            "给我",
+            "研究",
+            "分析",
+            "检查",
+            "修复",
+            "申请",
+            "建立",
+            "开发",
+            "实现",
+            "设置",
+            "选股",
+            "候选",
+            "七层",
+            "复盘",
+            "总结",
+            "完善",
+            "推进",
+            "落地",
+            "shadow",
+            "codex",
+            "repo",
+            "github",
+        )
+        return any(keyword in text or keyword in lowered for keyword in keywords)

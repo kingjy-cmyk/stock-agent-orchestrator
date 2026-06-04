@@ -129,6 +129,12 @@ Replay offline Feishu-style message samples without touching the production grou
 stock-agent-orchestrator shadow-replay --input /path/to/messages.jsonl --format markdown --report .runtime/shadow-report.md
 ```
 
+Extract a sanitized local sample from `codex-remote-relayd.log`:
+
+```bash
+stock-agent-orchestrator extract-relay-log --log-file /path/to/codex-remote-relayd.log --output .runtime/shadow-sample.jsonl --limit 120
+```
+
 Supported sample formats:
 
 - `.jsonl`: one JSON object per line with `sender_name`, `text`, optional `created_at`, optional `mentions_owner`

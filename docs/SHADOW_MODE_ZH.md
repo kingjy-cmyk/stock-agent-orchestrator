@@ -39,6 +39,14 @@ BOOS: @小C 今天先给我一份候选池
 
 ## 运行方式
 
+先从本地 relay 日志生成脱敏样本：
+
+```bash
+stock-agent-orchestrator extract-relay-log --log-file C:/Users/Jy95/.local/share/codex-remote/logs/codex-remote-relayd.log --output .runtime/shadow-sample.jsonl --limit 120
+```
+
+再执行离线回放：
+
 ```bash
 stock-agent-orchestrator shadow-replay --input samples/messages.jsonl --format markdown --report .runtime/shadow-report.md
 ```
@@ -50,6 +58,23 @@ stock-agent-orchestrator shadow-replay --input samples/messages.jsonl --format m
 - 推进了多少个事件
 - 每个任务当前状态
 - 发现了哪些断点
+
+## 脱敏规则
+
+日志提取器会把原始 `open_id / chat_id / message_id` 从输出样本中移除，只保留：
+
+- `sender_name`
+- `text`
+- `created_at`
+- `mentions_owner`
+
+当前内置角色映射：
+
+- BOOS
+- 小C
+- 小智
+- 小巴
+- 用户
 
 ## 断点类型
 
