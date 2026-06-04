@@ -87,7 +87,6 @@ stock-agent-orchestrator beta-validation-report ^
   --callback-url https://your-public-domain.example ^
   --commit <commit> ^
   --db .runtime/webhook.db ^
-  --task-id BETA-0001 ^
   --healthz-json .runtime/healthz.json ^
   --beta-group-name "Stock Agent Beta" ^
   --feishu-app-name "stock-agent-orchestrator-beta" ^
@@ -97,3 +96,12 @@ stock-agent-orchestrator beta-validation-report ^
 ```
 
 其中 `.runtime/healthz.json` 可以由公网 `/healthz` 响应保存得到。
+
+如果省略 `--task-id`，命令会从 SQLite 中自动选择最新的 `BETA-*` 任务。
+
+报告通过条件会检查：
+
+- preflight 通过。
+- SQLite 中找到任务。
+- 任务 context 中存在 `task_card_message_id`。
+- `/healthz` 正常且 `operation_error_count = 0`。

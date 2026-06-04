@@ -68,4 +68,5 @@ stock-agent-orchestrator init-beta-live-config --output configs/beta.live.toml
 - `/healthz` 显示 gateway connected。
 - `operation_error_count` 为 0。
 - SQLite 中存在对应任务 ID。
+- 任务 context 中存在 `task_card_message_id`。
 - `docs/BETA_VALIDATION_REPORT_ZH.md` 已生成并提交。
