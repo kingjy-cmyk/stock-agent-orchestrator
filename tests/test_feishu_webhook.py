@@ -13,6 +13,7 @@ from stock_agent_orchestrator.services.ingress import BoundedIngressQueue
 
 def payload(text: str = "@小C-beta 今天先给我一份候选池") -> dict:
     return {
+        "token": "verify-token",
         "event_id": "evt-1",
         "event": {
             "sender": {"sender_id": {"open_id": "user-open-id"}},
@@ -38,6 +39,18 @@ class FeishuWebhookTests(unittest.TestCase):
             self.assertTrue(result.accepted)
             self.assertFalse(result.enqueued)
             self.assertEqual(result.challenge, "abc")
+
+    def test_verification_token_rejects_untrusted_payload(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            gateway = FeishuWebhookGateway(worker=self._worker(tmp), verification_token="verify-token")
+            bad_payload = payload()
+            bad_payload["token"] = "wrong"
+
+            result = gateway.handle_payload(bad_payload, drain=True)
+
+            self.assertFalse(result.accepted)
+            self.assertEqual(result.reason, "invalid_verification_token")
+            self.assertEqual(gateway.state_snapshot().status, "degraded")
 
     def test_parse_message_event_extracts_text_chat_sender_and_mentions(self) -> None:
         event = parse_message_event(payload())

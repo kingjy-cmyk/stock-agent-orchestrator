@@ -4,6 +4,7 @@ import threading
 import unittest
 import urllib.error
 import urllib.request
+from dataclasses import replace
 from pathlib import Path
 
 from stock_agent_orchestrator.config import load_config
@@ -68,6 +69,35 @@ class FeishuHTTPTests(unittest.TestCase):
                 with self.assertRaises(urllib.error.HTTPError) as raised:
                     urllib.request.urlopen(req, timeout=5)
                 self.assertEqual(raised.exception.code, 400)
+            finally:
+                server.shutdown()
+                server.server_close()
+                thread.join(timeout=5)
+
+    def test_http_webhook_rejects_invalid_verification_token(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            config = load_config(Path("configs/beta.example.toml"))
+            config = replace(config, feishu=replace(config.feishu, verification_token="verify-token"))
+            server = build_webhook_server(
+                host="127.0.0.1",
+                port=0,
+                config=config,
+                db_path=Path(tmp) / "beta.db",
+            )
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            try:
+                payload = self._message_payload()
+                payload["token"] = "wrong"
+                req = urllib.request.Request(
+                    f"http://127.0.0.1:{server.server_address[1]}/webhook",
+                    data=json.dumps(payload).encode("utf-8"),
+                    headers={"Content-Type": "application/json"},
+                    method="POST",
+                )
+                with self.assertRaises(urllib.error.HTTPError) as raised:
+                    urllib.request.urlopen(req, timeout=5)
+                self.assertEqual(raised.exception.code, 403)
             finally:
                 server.shutdown()
                 server.server_close()

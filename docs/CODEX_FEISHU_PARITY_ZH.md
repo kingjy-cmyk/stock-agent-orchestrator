@@ -25,8 +25,8 @@
 | Apply operations | 已开始 | `ClientOperationGateway.apply()` | 还缺 update_card 和批量错误处理 |
 | Ingress queue | 已完成 MVP | `BoundedIngressQueue` | 后续补持久化和 stale drop |
 | Worker/Daemon 分离 | 已完成 MVP | `ConnectorWorker` | 后续补常驻进程状态和优雅关闭 |
-| HTTP webhook service | 已完成本地版 | `run-webhook` / `/webhook` / `/healthz` | 还缺公网部署和签名校验 |
-| URL verification | 已完成 | challenge 响应 | 后续补飞书 encrypt key 校验 |
+| HTTP webhook service | 已完成本地版 | `run-webhook` / `/webhook` / `/healthz` | 还缺公网部署和 encrypt key 解密 |
+| URL verification | 已完成 | challenge 响应 + verification token 校验 | 后续补飞书 encrypt key 解密 |
 | Message event parse | 已完成 MVP | `parse_message_event` | 后续补更多消息类型 |
 | Live send client | 已完成安全骨架 | `LiveFeishuClient` | 待真实 beta 群验收 |
 | Send safety gate | 已完成 MVP | `send_mode=live` + `--allow-live-send` + `send_allowlist` | 后续补更细的 per-agent 权限 |
@@ -55,7 +55,7 @@
 
 - 公网 callback 部署
 - 飞书事件订阅配置
-- 飞书签名 / encrypt key 校验
+- 飞书 encrypt key 解密 / 请求签名校验
 - rate limit 细化
 - 去重和错误记录持久化
 

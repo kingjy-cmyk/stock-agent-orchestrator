@@ -29,3 +29,4 @@ api_base_url = "https://open.feishu.cn"
 app_id = "replace-me"
 app_secret = "replace-me"
 send_allowlist = ["replace-me"]
+verification_token = "replace-me"

@@ -55,6 +55,7 @@ api_base_url = "https://open.feishu.cn"
 app_id = "cli_a_real_app"
 app_secret = "real-secret-placeholder-for-test"
 send_allowlist = ["oc_beta_chat"]
+verification_token = "verify-token"
 """,
                 encoding="utf-8",
             )

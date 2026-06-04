@@ -42,10 +42,12 @@ class FeishuWebhookGateway(OperationErrorRecorder):
         worker: ConnectorWorker | None = None,
         instance_id: str = "beta",
         dedupe_window: int = 2048,
+        verification_token: str = "",
     ) -> None:
         self.worker = worker
         self.instance_id = instance_id
         self.dedupe_window = dedupe_window
+        self.verification_token = verification_token.strip()
         self._seen_keys: set[str] = set()
         self._seen_order: deque[str] = deque()
         self._accepted_count = 0
@@ -58,6 +60,10 @@ class FeishuWebhookGateway(OperationErrorRecorder):
         if self.worker is None:
             self._last_error = "worker_not_attached"
             return WebhookResult(False, reason="worker_not_attached")
+
+        if not self._token_is_valid(payload):
+            self._last_error = "invalid_verification_token"
+            return WebhookResult(False, reason="invalid_verification_token")
 
         challenge = str(payload.get("challenge") or "").strip()
         if challenge:
@@ -117,6 +123,11 @@ class FeishuWebhookGateway(OperationErrorRecorder):
             expired = self._seen_order.popleft()
             self._seen_keys.discard(expired)
         return False
+
+    def _token_is_valid(self, payload: dict[str, Any]) -> bool:
+        if not self.verification_token:
+            return True
+        return str(payload.get("token") or "").strip() == self.verification_token
 
 
 def parse_message_event(payload: dict[str, Any]) -> FeishuMessageEvent | None:

@@ -164,6 +164,7 @@ def _required_placeholder_fields(config: OrchestratorConfig) -> list[str]:
         "feishu.analyst_open_id",
         "feishu.app_id",
         "feishu.app_secret",
+        "feishu.verification_token",
     }
     fields = flatten_config(config)
     result: list[str] = []

@@ -72,6 +72,7 @@ Stage 2A 已实现：
 - `message_id/event_id` 内存去重
 - `/healthz` gateway 状态
 - operation error 记录
+- verification token 校验
 
 Stage 2B 剩余：
 
@@ -81,6 +82,7 @@ Stage 2B 剩余：
 - 填小C-beta `open_id`
 - 填飞书 app_id / app_secret
 - 填 `send_allowlist`
+- 填 `verification_token`
 - 准备公网 callback 地址
 - 在飞书开放平台配置事件订阅
 - 真实 beta 群发消息后验证任务卡出现
@@ -96,6 +98,7 @@ Stage 2B 剩余：
 - gateway state
 - send allowlist
 - operation error 记录
+- verification token 校验
 
 仍需注意：
 

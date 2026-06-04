@@ -46,6 +46,7 @@ Feishu Gateway
 - `FeishuOperation`：对标 Codex Operation 的发送操作抽象。
 - `FeishuOperationGateway`：对标 Codex Gateway.Apply 的操作应用接口。
 - `GuardedOperationGateway`：发送 allowlist 和 operation error 记录。
+- `verification_token`：飞书 event callback token 校验。
 - `FakeFeishuClient`：测试用发送器。
 - `LiveFeishuClient`：真实飞书发送器，默认不启用。
 - `FeishuWebhookGateway`：本地 event callback gateway 骨架。
@@ -78,6 +79,7 @@ stock-agent-orchestrator run-webhook --config configs/beta.example.toml --host 1
 - 项目环境是 `beta`
 - 项目模式是 `active`
 - `feishu.group_chat_id` 必须在 `feishu.send_allowlist` 内
+- `feishu.verification_token` 必须配置
 
 不满足任一条件，都不会向真实飞书群发送消息。
 
@@ -111,12 +113,13 @@ stock-agent-orchestrator beta-live-preflight --config configs/beta.live.toml --c
 - `FeishuWebhookGateway` 使用 `event_id/message_id` 做内存去重，重复事件会 accepted 但不会再次入队。
 - `/healthz` 暴露 `connected/degraded`、accepted、enqueued、duplicate、operation error 计数。
 - `GuardedOperationGateway` 会拒绝不在 `send_allowlist` 内的 chat_id。
+- `FeishuWebhookGateway` 会在配置 `verification_token` 后拒绝 token 不匹配的 callback。
 - operation 发送失败会记录到 gateway，并让业务结果返回 `operation_error`，避免 worker 直接崩溃。
 
 当前限制：
 
 - 去重和错误记录是内存级，服务重启后会丢失。
-- 还没有飞书签名 / encrypt key 校验。
+- 还没有飞书 encrypt key 解密和请求签名校验。
 - 还没有真正的 rate limit，只有限制入口队列长度。
 
 ## 安全边界

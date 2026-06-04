@@ -29,3 +29,4 @@ api_base_url = "https://open.feishu.cn"
 app_id = ""
 app_secret = ""
 send_allowlist = []
+verification_token = ""

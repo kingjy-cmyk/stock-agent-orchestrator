@@ -39,6 +39,9 @@ class FeishuWebhookHTTPHandler(BaseHTTPRequestHandler):
         if result.challenge:
             self._write_json(200, {"challenge": result.challenge})
             return
+        if result.reason == "invalid_verification_token":
+            self._write_json(403, webhook_result_to_dict(result))
+            return
         if not result.accepted:
             self._write_json(202, webhook_result_to_dict(result))
             return
@@ -82,7 +85,7 @@ def build_webhook_server(
     allow_live_send: bool = False,
     max_per_instance: int = 1024,
 ) -> ThreadingHTTPServer:
-    gateway = FeishuWebhookGateway()
+    gateway = FeishuWebhookGateway(verification_token=config.feishu.verification_token)
     operation_gateway = (
         None
         if feishu_client

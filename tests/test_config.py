@@ -134,6 +134,7 @@ send_allowlist = []
 
             self.assertTrue(any(issue.severity == "error" and issue.field == "feishu.app_id" for issue in issues))
             self.assertTrue(any(issue.severity == "error" and issue.field == "feishu.send_allowlist" for issue in issues))
+            self.assertTrue(any(issue.severity == "error" and issue.field == "feishu.verification_token" for issue in issues))
 
     def test_live_send_requires_group_in_allowlist(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -170,6 +171,7 @@ send_mode = "live"
 app_id = "app"
 app_secret = "secret"
 send_allowlist = ["other-chat"]
+verification_token = "token"
 """,
                 encoding="utf-8",
             )

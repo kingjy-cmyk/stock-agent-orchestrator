@@ -23,6 +23,7 @@ copy configs\beta.live.example.toml configs\beta.live.toml
 - `feishu.app_id`
 - `feishu.app_secret`
 - `feishu.send_allowlist`
+- `feishu.verification_token`
 - `paths.candidate_list`
 - `paths.seven_layer_reports`
 - `paths.entry_monitor_reports`
@@ -50,6 +51,7 @@ stock-agent-orchestrator beta-live-preflight --config configs/beta.live.toml --c
 - 实盘交易关闭。
 - 新规则必须用户审批。
 - 必填字段没有占位符。
+- `feishu.verification_token` 已配置，用于飞书 callback token 校验。
 - callback URL 是公网 `https`。
 
 ## 通过后怎么做
@@ -77,5 +79,6 @@ stock-agent-orchestrator run-webhook --config configs/beta.live.toml --allow-liv
 ## 当前限制
 
 - 该命令只做本地静态准入检查，不探测公网 URL 是否真的可访问。
-- 飞书签名 / encrypt key 校验还未实现。
+- 已支持飞书 event callback verification token 校验。
+- 飞书 encrypt key 解密和请求签名校验还未实现。
 - 去重和 operation error 记录仍是内存级，服务重启会丢失。

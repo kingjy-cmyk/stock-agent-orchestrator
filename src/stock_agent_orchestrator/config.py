@@ -46,6 +46,7 @@ class FeishuConfig:
     api_base_url: str = "https://open.feishu.cn"
     send_mode: str = "fake"
     send_allowlist: list[str] = field(default_factory=list)
+    verification_token: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -118,6 +119,8 @@ def validate_config(config: OrchestratorConfig) -> list[ConfigValidationIssue]:
             issues.append(ConfigValidationIssue("error", "feishu.app_id", "live send requires app_id and app_secret"))
         if config.feishu.group_chat_id.strip() not in {value.strip() for value in config.feishu.send_allowlist}:
             issues.append(ConfigValidationIssue("error", "feishu.send_allowlist", "live send requires group_chat_id in send_allowlist"))
+        if not config.feishu.verification_token.strip() or config.feishu.verification_token.strip() in PLACEHOLDER_VALUES:
+            issues.append(ConfigValidationIssue("error", "feishu.verification_token", "live callback requires verification_token"))
 
     fields = flatten_config(config)
     for field, value in fields.items():
