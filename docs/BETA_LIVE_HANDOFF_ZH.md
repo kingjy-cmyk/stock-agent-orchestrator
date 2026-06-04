@@ -25,6 +25,12 @@ stock-agent-orchestrator beta-live-handoff --shell powershell --callback-url htt
 
 ## 推荐顺序
 
+先运行总控台，确认当前 stage 和 next_action：
+
+```bash
+stock-agent-orchestrator beta-live-control-panel --callback-url https://your-public-domain.example --task-id BETA-0001 --format markdown
+```
+
 ```bash
 stock-agent-orchestrator beta-live-handoff --shell powershell --callback-url https://your-public-domain.example --task-id BETA-0001 --format markdown
 ```

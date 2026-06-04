@@ -11,6 +11,12 @@
 
 ## 使用
 
+先运行总控台，确认当前 stage 和下一步：
+
+```bash
+stock-agent-orchestrator beta-live-control-panel --callback-url https://your-public-domain.example --task-id BETA-0001 --format markdown
+```
+
 先生成真实 beta 交接单，确认用户审批点和 secret 边界：
 
 ```bash

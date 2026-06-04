@@ -53,6 +53,11 @@ from stock_agent_orchestrator.services.beta_live_config_review import (
     beta_live_config_review_to_markdown,
     build_beta_live_config_review,
 )
+from stock_agent_orchestrator.services.beta_live_control_panel import (
+    beta_live_control_panel_to_dict,
+    beta_live_control_panel_to_markdown,
+    build_beta_live_control_panel,
+)
 from stock_agent_orchestrator.services.beta_live_evidence_rehearsal import (
     beta_live_evidence_rehearsal_to_dict,
     beta_live_evidence_rehearsal_to_markdown,
@@ -295,6 +300,19 @@ def build_parser() -> argparse.ArgumentParser:
     beta_live_handoff.add_argument("--shell", choices=["powershell", "bash"], default="powershell")
     beta_live_handoff.add_argument("--task-id", default="BETA-0001")
     beta_live_handoff.add_argument("--format", choices=["json", "markdown"], default="markdown")
+
+    beta_live_control_panel = sub.add_parser("beta-live-control-panel")
+    beta_live_control_panel.add_argument("--repo-root", default=".")
+    beta_live_control_panel.add_argument("--config", default="configs/beta.live.toml")
+    beta_live_control_panel.add_argument("--callback-url", default="https://your-public-domain.example")
+    beta_live_control_panel.add_argument("--db", default=".runtime/webhook.db")
+    beta_live_control_panel.add_argument("--healthz-json", default=".runtime/healthz.json")
+    beta_live_control_panel.add_argument("--report-output", default="docs/BETA_VALIDATION_REPORT_ZH.md")
+    beta_live_control_panel.add_argument("--host", default="127.0.0.1")
+    beta_live_control_panel.add_argument("--port", type=int, default=8787)
+    beta_live_control_panel.add_argument("--shell", choices=["powershell", "bash"], default="powershell")
+    beta_live_control_panel.add_argument("--task-id", default="BETA-0001")
+    beta_live_control_panel.add_argument("--format", choices=["json", "markdown"], default="markdown")
 
     beta_validation_report = sub.add_parser("beta-validation-report")
     beta_validation_report.add_argument("--config", default="configs/beta.live.toml")
@@ -776,6 +794,29 @@ def main() -> None:
             else json.dumps(beta_live_handoff_to_dict(handoff), ensure_ascii=False, indent=2)
         )
         print(rendered)
+        return
+
+    if args.command == "beta-live-control-panel":
+        panel = build_beta_live_control_panel(
+            repo_root=Path(args.repo_root),
+            config_path=Path(args.config),
+            callback_url=args.callback_url,
+            db_path=args.db,
+            healthz_json_path=args.healthz_json,
+            report_path=args.report_output,
+            host=args.host,
+            port=args.port,
+            shell=args.shell,
+            task_id=args.task_id,
+        )
+        rendered = (
+            beta_live_control_panel_to_markdown(panel)
+            if args.format == "markdown"
+            else json.dumps(beta_live_control_panel_to_dict(panel), ensure_ascii=False, indent=2)
+        )
+        print(rendered)
+        if not panel.ok:
+            raise SystemExit(1)
         return
 
     if args.command == "beta-validation-report":
