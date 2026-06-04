@@ -22,6 +22,8 @@ cd stock-agent-orchestrator
 python -m pip install -e .
 ```
 
+安装会自动拉取 `cryptography`，用于飞书 encrypt payload 解密。
+
 ## 新电脑一键启动
 
 Windows PowerShell：

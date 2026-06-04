@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import hashlib
 import hmac
 import json
@@ -7,6 +8,8 @@ from dataclasses import asdict
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
+
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 from stock_agent_orchestrator.config import OrchestratorConfig, load_config
 from stock_agent_orchestrator.connectors.feishu import FeishuClient, build_operation_gateway
@@ -78,6 +81,9 @@ class FeishuWebhookHTTPHandler(BaseHTTPRequestHandler):
             raise ValueError("invalid json") from exc
         if not isinstance(payload, dict):
             raise ValueError("json body must be an object")
+        encrypted = str(payload.get("encrypt") or "").strip()
+        if encrypted:
+            payload = decrypt_lark_payload(encrypted=encrypted, encrypt_key=self.encrypt_key)
         return payload
 
     def _signature_is_valid(self, raw_body: bytes) -> bool:
@@ -177,3 +183,39 @@ def webhook_result_to_dict(result: WebhookResult) -> dict[str, Any]:
 def calculate_lark_signature(*, timestamp: str, nonce: str, encrypt_key: str, raw_body: bytes) -> str:
     payload = (timestamp + nonce + encrypt_key).encode("utf-8") + raw_body
     return hashlib.sha256(payload).hexdigest()
+
+
+def decrypt_lark_payload(*, encrypted: str, encrypt_key: str) -> dict[str, Any]:
+    if not encrypt_key.strip():
+        raise ValueError("encrypt_key is required for encrypted Feishu callback")
+    try:
+        encrypted_bytes = base64.b64decode(encrypted)
+    except Exception as exc:
+        raise ValueError("invalid encrypted callback payload") from exc
+    if len(encrypted_bytes) <= 16:
+        raise ValueError("encrypted callback payload is too short")
+    iv = encrypted_bytes[:16]
+    ciphertext = encrypted_bytes[16:]
+    key = hashlib.sha256(encrypt_key.encode("utf-8")).digest()
+    decryptor = Cipher(algorithms.AES(key), modes.CBC(iv)).decryptor()
+    padded = decryptor.update(ciphertext) + decryptor.finalize()
+    raw = _pkcs7_unpad(padded)
+    try:
+        payload = json.loads(raw.decode("utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ValueError("decrypted callback payload is not valid json") from exc
+    if not isinstance(payload, dict):
+        raise ValueError("decrypted callback payload must be an object")
+    return payload
+
+
+def _pkcs7_unpad(payload: bytes) -> bytes:
+    if not payload:
+        raise ValueError("decrypted callback payload is empty")
+    padding_size = payload[-1]
+    if padding_size < 1 or padding_size > 16:
+        raise ValueError("invalid callback payload padding")
+    padding = payload[-padding_size:]
+    if padding != bytes([padding_size]) * padding_size:
+        raise ValueError("invalid callback payload padding")
+    return payload[:-padding_size]
