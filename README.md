@@ -246,6 +246,12 @@ Before touching a real beta group, run the stricter live preflight gate:
 stock-agent-orchestrator beta-live-preflight --config configs/beta.live.toml --callback-url https://your-public-domain.example
 ```
 
+After a real beta run, generate a validation report:
+
+```bash
+stock-agent-orchestrator beta-validation-report --config configs/beta.live.toml --callback-url https://your-public-domain.example --db .runtime/webhook.db --task-id BETA-0001 --healthz-json .runtime/healthz.json --output docs/BETA_VALIDATION_REPORT_ZH.md
+```
+
 Supported sample formats:
 
 - `.jsonl`: one JSON object per line with `sender_name`, `text`, optional `created_at`, optional `mentions_owner`

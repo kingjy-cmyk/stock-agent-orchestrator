@@ -18,6 +18,12 @@ from stock_agent_orchestrator.services.beta_live_preflight import (
     run_beta_live_preflight,
 )
 from stock_agent_orchestrator.services.beta_orchestrator import BetaOrchestratorService
+from stock_agent_orchestrator.services.beta_validation_report import (
+    BetaValidationEvidence,
+    beta_validation_report_to_dict,
+    beta_validation_report_to_markdown,
+    build_beta_validation_report,
+)
 from stock_agent_orchestrator.services.connector_worker import ConnectorWorker
 from stock_agent_orchestrator.services.demo import write_demo_sample
 from stock_agent_orchestrator.services.doctor import doctor_report_to_dict, run_doctor
@@ -103,6 +109,23 @@ def build_parser() -> argparse.ArgumentParser:
     beta_live_preflight.add_argument("--config", default="configs/beta.live.toml")
     beta_live_preflight.add_argument("--callback-url", required=True)
     beta_live_preflight.add_argument("--format", choices=["json", "markdown"], default="json")
+
+    beta_validation_report = sub.add_parser("beta-validation-report")
+    beta_validation_report.add_argument("--config", default="configs/beta.live.toml")
+    beta_validation_report.add_argument("--callback-url", required=True)
+    beta_validation_report.add_argument("--commit", default="")
+    beta_validation_report.add_argument("--db", default="")
+    beta_validation_report.add_argument("--task-id", default="")
+    beta_validation_report.add_argument("--healthz-json", default="")
+    beta_validation_report.add_argument("--beta-group-name", default="")
+    beta_validation_report.add_argument("--feishu-app-name", default="")
+    beta_validation_report.add_argument("--delegate-text", default="@小C-beta 今天先给我一份候选池")
+    beta_validation_report.add_argument("--beta-group-screenshot", default="")
+    beta_validation_report.add_argument("--task-card-screenshot", default="")
+    beta_validation_report.add_argument("--healthz-screenshot", default="")
+    beta_validation_report.add_argument("--notes", default="")
+    beta_validation_report.add_argument("--output", default="")
+    beta_validation_report.add_argument("--format", choices=["json", "markdown"], default="markdown")
 
     render_card = sub.add_parser("render-task-card")
     render_card.add_argument("--db", default=str(DEFAULT_DB))
@@ -307,6 +330,37 @@ def main() -> None:
             if args.format == "markdown"
             else json.dumps(preflight_report_to_dict(report), ensure_ascii=False, indent=2)
         )
+        print(rendered)
+        if not report.ok:
+            raise SystemExit(1)
+        return
+
+    if args.command == "beta-validation-report":
+        report = build_beta_validation_report(
+            config=load_config(Path(args.config)),
+            callback_url=args.callback_url,
+            commit=args.commit,
+            db_path=Path(args.db) if args.db else None,
+            task_id=args.task_id,
+            healthz_json_path=Path(args.healthz_json) if args.healthz_json else None,
+            evidence=BetaValidationEvidence(
+                beta_group_name=args.beta_group_name,
+                feishu_app_name=args.feishu_app_name,
+                delegate_text=args.delegate_text,
+                beta_group_screenshot=args.beta_group_screenshot,
+                task_card_screenshot=args.task_card_screenshot,
+                healthz_screenshot=args.healthz_screenshot,
+                notes=args.notes,
+            ),
+        )
+        rendered = (
+            beta_validation_report_to_markdown(report)
+            if args.format == "markdown"
+            else json.dumps(beta_validation_report_to_dict(report), ensure_ascii=False, indent=2)
+        )
+        if args.output:
+            Path(args.output).parent.mkdir(parents=True, exist_ok=True)
+            Path(args.output).write_text(rendered, encoding="utf-8")
         print(rendered)
         if not report.ok:
             raise SystemExit(1)

@@ -137,6 +137,30 @@ https://your-public-domain.example/healthz
 - `operation_error_count = 0`
 - `duplicate_count` 没有异常增长
 
+### 6. 生成验证报告
+
+先保存 `/healthz` 响应到 `.runtime/healthz.json`，再运行：
+
+```bash
+stock-agent-orchestrator beta-validation-report \
+  --config configs/beta.live.toml \
+  --callback-url https://your-public-domain.example \
+  --commit <commit> \
+  --db .runtime/webhook.db \
+  --task-id BETA-0001 \
+  --healthz-json .runtime/healthz.json \
+  --beta-group-name "Stock Agent Beta" \
+  --feishu-app-name "stock-agent-orchestrator-beta" \
+  --output docs/BETA_VALIDATION_REPORT_ZH.md
+```
+
+期望：
+
+- `总体通过 = true`
+- `preflight 通过 = true`
+- `任务存在 = true`
+- `healthz 正常 = true`
+
 ## 录屏建议
 
 录屏可以按这个顺序：

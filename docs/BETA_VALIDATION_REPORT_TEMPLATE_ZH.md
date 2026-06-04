@@ -76,3 +76,24 @@ stock-agent-orchestrator run-webhook --config configs/beta.live.toml --allow-liv
 - 是否通过真实 beta 最小闭环：
 - 是否可进入 Stage 3：
 - 需要修复的问题：
+
+## 自动生成
+
+真实 beta 验证完成后，可以用命令生成报告：
+
+```bash
+stock-agent-orchestrator beta-validation-report ^
+  --config configs/beta.live.toml ^
+  --callback-url https://your-public-domain.example ^
+  --commit <commit> ^
+  --db .runtime/webhook.db ^
+  --task-id BETA-0001 ^
+  --healthz-json .runtime/healthz.json ^
+  --beta-group-name "Stock Agent Beta" ^
+  --feishu-app-name "stock-agent-orchestrator-beta" ^
+  --beta-group-screenshot docs/assets/beta-group.png ^
+  --task-card-screenshot docs/assets/task-card.png ^
+  --output docs/BETA_VALIDATION_REPORT_ZH.md
+```
+
+其中 `.runtime/healthz.json` 可以由公网 `/healthz` 响应保存得到。
