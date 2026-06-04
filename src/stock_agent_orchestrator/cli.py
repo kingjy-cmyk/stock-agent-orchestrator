@@ -32,6 +32,11 @@ from stock_agent_orchestrator.services.beta_live_config import (
     beta_live_config_init_to_markdown,
     init_beta_live_config,
 )
+from stock_agent_orchestrator.services.beta_live_config_env import (
+    beta_live_config_from_env_to_dict,
+    beta_live_config_from_env_to_markdown,
+    write_beta_live_config_from_env,
+)
 from stock_agent_orchestrator.services.beta_live_config_status import (
     beta_live_config_status_to_dict,
     beta_live_config_status_to_markdown,
@@ -145,6 +150,12 @@ def build_parser() -> argparse.ArgumentParser:
     init_beta_live_config_cmd.add_argument("--output", default="configs/beta.live.toml")
     init_beta_live_config_cmd.add_argument("--force", action="store_true")
     init_beta_live_config_cmd.add_argument("--format", choices=["json", "markdown"], default="markdown")
+
+    beta_live_config_from_env = sub.add_parser("beta-live-config-from-env")
+    beta_live_config_from_env.add_argument("--repo-root", default=".")
+    beta_live_config_from_env.add_argument("--output", default="configs/beta.live.toml")
+    beta_live_config_from_env.add_argument("--overwrite", action="store_true")
+    beta_live_config_from_env.add_argument("--format", choices=["json", "markdown"], default="markdown")
 
     beta_live_config_status = sub.add_parser("beta-live-config-status")
     beta_live_config_status.add_argument("--repo-root", default=".")
@@ -426,6 +437,22 @@ def main() -> None:
             else json.dumps(beta_live_config_init_to_dict(result), ensure_ascii=False, indent=2)
         )
         print(rendered)
+        return
+
+    if args.command == "beta-live-config-from-env":
+        result = write_beta_live_config_from_env(
+            output_path=Path(args.output),
+            repo_root=Path(args.repo_root),
+            overwrite=args.overwrite,
+        )
+        rendered = (
+            beta_live_config_from_env_to_markdown(result)
+            if args.format == "markdown"
+            else json.dumps(beta_live_config_from_env_to_dict(result), ensure_ascii=False, indent=2)
+        )
+        print(rendered)
+        if not result.written:
+            raise SystemExit(1)
         return
 
     if args.command == "beta-live-config-status":

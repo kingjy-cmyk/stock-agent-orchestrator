@@ -42,7 +42,7 @@ stock-agent-orchestrator application-readiness --format markdown
 
 ## 冲到 90+ 的最短路径
 
-1. 运行 `init-beta-live-config` 生成本地 `configs/beta.live.toml`，再填入真实值。
+1. 运行 `init-beta-live-config` 生成本地 `configs/beta.live.toml`，再手工填入真实值；或者用 `beta-live-config-from-env` 从环境变量生成。
 2. 运行 `beta-live-config-status`，确认配置存在、已被 `.gitignore` 保护、必要字段已填。
 3. 运行 `beta-validation-guide`，确认是否允许进入真实 beta。
 4. 运行 `beta-live-runbook`，生成真实 beta 群操作手册和停止条件。
@@ -56,6 +56,10 @@ stock-agent-orchestrator application-readiness --format markdown
 
 ```bash
 stock-agent-orchestrator init-beta-live-config --output configs/beta.live.toml
+```
+
+```bash
+stock-agent-orchestrator beta-live-config-from-env --output configs/beta.live.toml --overwrite --format markdown
 ```
 
 ```bash

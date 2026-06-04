@@ -90,6 +90,12 @@ stock-agent-orchestrator beta-live-preflight --config configs/beta.live.example.
 - 有公网 https callback。
 - `configs/beta.live.toml` 已填真实值。
 
+如果使用环境变量生成配置：
+
+```bash
+stock-agent-orchestrator beta-live-config-from-env --output configs/beta.live.toml --overwrite --format markdown
+```
+
 ### 1. 检查 live 配置状态
 
 ```bash

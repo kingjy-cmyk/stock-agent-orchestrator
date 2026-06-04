@@ -67,6 +67,20 @@ class BetaLiveConfigStatusTests(unittest.TestCase):
             self.assertFalse(status.gitignored)
             self.assertTrue(any(".gitignore" in step for step in status.next_steps))
 
+    def test_invalid_toml_reports_parse_error_without_crashing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            config_path = tmp_path / "configs" / "beta.live.toml"
+            config_path.parent.mkdir(parents=True)
+            (tmp_path / ".gitignore").write_text("configs/beta.live.toml\n", encoding="utf-8")
+            config_path.write_text("not toml\n", encoding="utf-8")
+
+            status = inspect_beta_live_config(config_path=config_path, repo_root=tmp_path)
+
+            self.assertFalse(status.ok)
+            self.assertTrue(any(issue["field"] == "config" for issue in status.validation_issues))
+            self.assertTrue(any(item.status == "unreadable" for item in status.field_statuses))
+
     def _valid_config(self) -> str:
         return """
 [project]

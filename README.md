@@ -26,6 +26,7 @@
 - [演示脚本](docs/DEMO_SCRIPT_ZH.md)
 - [飞书 Beta 验收向导](docs/BETA_VALIDATION_GUIDE_ZH.md)
 - [飞书 Beta Live Runbook](docs/BETA_LIVE_RUNBOOK_ZH.md)
+- [Beta Live 环境变量配置](docs/BETA_LIVE_ENV_ZH.md)
 - [飞书 Beta 验证报告模板](docs/BETA_VALIDATION_REPORT_TEMPLATE_ZH.md)
 - [中文产品介绍](docs/INTRO_ZH.md)
 - [飞书优先原则](docs/FEISHU_FIRST_ZH.md)
@@ -60,7 +61,7 @@ Current status:
 
 - local install/demo/smoke paths are documented
 - Feishu connector has a safe beta preflight gate
-- 87 unit tests pass locally
+- 92 unit tests pass locally
 - real Feishu beta validation is still pending
 
 Current readiness can be checked by command:
@@ -258,6 +259,12 @@ Before touching a real beta group, run the stricter live preflight gate:
 stock-agent-orchestrator beta-live-config-status --config configs/beta.live.toml --format markdown
 ```
 
+To generate the ignored live config from environment variables:
+
+```bash
+stock-agent-orchestrator beta-live-config-from-env --output configs/beta.live.toml --overwrite --format markdown
+```
+
 ```bash
 stock-agent-orchestrator beta-live-preflight --config configs/beta.live.toml --callback-url https://your-public-domain.example
 ```
@@ -296,6 +303,7 @@ Supported sample formats:
 - 演示脚本: [docs/DEMO_SCRIPT_ZH.md](docs/DEMO_SCRIPT_ZH.md)
 - 飞书 Beta 验证报告模板: [docs/BETA_VALIDATION_REPORT_TEMPLATE_ZH.md](docs/BETA_VALIDATION_REPORT_TEMPLATE_ZH.md)
 - 飞书 Beta Live Runbook: [docs/BETA_LIVE_RUNBOOK_ZH.md](docs/BETA_LIVE_RUNBOOK_ZH.md)
+- Beta Live 环境变量配置: [docs/BETA_LIVE_ENV_ZH.md](docs/BETA_LIVE_ENV_ZH.md)
 - 飞书优先原则: [docs/FEISHU_FIRST_ZH.md](docs/FEISHU_FIRST_ZH.md)
 - 飞书连接器架构: [docs/FEISHU_CONNECTOR_ZH.md](docs/FEISHU_CONNECTOR_ZH.md)
 - 飞书 Beta Live Preflight: [docs/BETA_LIVE_PREFLIGHT_ZH.md](docs/BETA_LIVE_PREFLIGHT_ZH.md)

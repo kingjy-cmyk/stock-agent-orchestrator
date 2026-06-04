@@ -64,10 +64,18 @@ def inspect_beta_live_config(*, config_path: Path, repo_root: Path = Path(".")) 
     validation_issues: list[ConfigValidationIssue] = []
 
     if exists:
-        config = load_config(config_path)
-        validation_issues = validate_config(config)
-        flattened = flatten_config(config)
-        field_statuses = [_field_status(field, flattened.get(field)) for field in REQUIRED_BETA_LIVE_FIELDS]
+        try:
+            config = load_config(config_path)
+        except Exception as exc:
+            validation_issues = [ConfigValidationIssue("error", "config", f"failed to parse config: {exc}")]
+            field_statuses = [
+                BetaLiveFieldStatus(field=field, status="unreadable", value="<config parse failed>", sensitive=field in SENSITIVE_FIELDS)
+                for field in REQUIRED_BETA_LIVE_FIELDS
+            ]
+        else:
+            validation_issues = validate_config(config)
+            flattened = flatten_config(config)
+            field_statuses = [_field_status(field, flattened.get(field)) for field in REQUIRED_BETA_LIVE_FIELDS]
     else:
         field_statuses = [
             BetaLiveFieldStatus(field=field, status="missing_config", value="<config file missing>", sensitive=field in SENSITIVE_FIELDS)

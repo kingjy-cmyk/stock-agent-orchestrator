@@ -14,7 +14,13 @@
 stock-agent-orchestrator init-beta-live-config --output configs/beta.live.toml
 ```
 
-填入真实值：
+也可以从环境变量生成：
+
+```bash
+stock-agent-orchestrator beta-live-config-from-env --output configs/beta.live.toml --overwrite --format markdown
+```
+
+需要填入或提供的真实值：
 
 - `feishu.group_chat_id`
 - `feishu.owner_open_id`

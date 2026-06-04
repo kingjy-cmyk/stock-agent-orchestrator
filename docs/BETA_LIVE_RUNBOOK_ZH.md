@@ -23,7 +23,7 @@ stock-agent-orchestrator beta-live-runbook --config configs/beta.live.toml --cal
 ## 推荐顺序
 
 1. 运行 `init-beta-live-config` 生成本地真实配置。
-2. 填入 beta 飞书 app、群 chat_id、三个 agent open_id、verification_token、encrypt_key。
+2. 手工填入真实值，或运行 `beta-live-config-from-env` 从环境变量生成真实配置。
 3. 准备公网 HTTPS callback。
 4. 运行 `beta-live-config-status`，确认没有占位符且 secret 已脱敏显示。
 5. 运行 `beta-live-runbook`。

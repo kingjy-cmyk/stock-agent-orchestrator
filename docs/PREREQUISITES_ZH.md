@@ -311,6 +311,12 @@ stock-agent-orchestrator beta-smoke --config configs/beta.example.toml
 stock-agent-orchestrator init-beta-live-config --output configs/beta.live.toml
 ```
 
+也可以从环境变量生成真实配置：
+
+```bash
+stock-agent-orchestrator beta-live-config-from-env --output configs/beta.live.toml --overwrite --format markdown
+```
+
 `configs/beta.live.toml` 包含 `app_secret`、`verification_token`、`encrypt_key`，不要提交到 GitHub。
 
 填完真实值后先检查本地配置状态，确认 secret 不会在输出中明文展示：

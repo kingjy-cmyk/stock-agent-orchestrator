@@ -33,7 +33,7 @@ stock-agent-orchestrator beta-validation-guide --config configs/beta.live.toml -
 
 ## 推荐顺序
 
-1. 运行 `init-beta-live-config` 生成本地 `configs/beta.live.toml`。
+1. 运行 `init-beta-live-config` 生成本地 `configs/beta.live.toml`，或用 `beta-live-config-from-env` 从环境变量生成。
 2. 运行 `beta-live-config-status`，确认配置状态。
 3. 运行 `beta-validation-guide`。
 4. 如果向导显示 `fix_preflight_before_live_beta`，先修配置。
@@ -46,6 +46,10 @@ stock-agent-orchestrator beta-validation-guide --config configs/beta.live.toml -
 11. 再运行 `application-readiness`。
 
 真实 beta runbook：
+
+```bash
+stock-agent-orchestrator beta-live-config-from-env --output configs/beta.live.toml --overwrite --format markdown
+```
 
 ```bash
 stock-agent-orchestrator beta-live-config-status --config configs/beta.live.toml --format markdown
