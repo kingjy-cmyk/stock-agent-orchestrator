@@ -11,8 +11,10 @@ from stock_agent_orchestrator.connectors.feishu import FakeFeishuClient, FeishuM
 from stock_agent_orchestrator.domain.models import AgentRole, TaskIntent
 from stock_agent_orchestrator.persistence.sqlite_store import SQLiteTaskStore
 from stock_agent_orchestrator.services.beta_orchestrator import BetaOrchestratorService
+from stock_agent_orchestrator.services.connector_worker import ConnectorWorker
 from stock_agent_orchestrator.services.demo import write_demo_sample
 from stock_agent_orchestrator.services.doctor import doctor_report_to_dict, run_doctor
+from stock_agent_orchestrator.services.ingress import BoundedIngressQueue, IngressItem
 from stock_agent_orchestrator.services.rule_memory import RuleMemoryService
 from stock_agent_orchestrator.services.shadow_replay import (
     ShadowReplayService,
@@ -99,6 +101,11 @@ def build_parser() -> argparse.ArgumentParser:
     beta_smoke.add_argument("--config", default="configs/beta.example.toml")
     beta_smoke.add_argument("--db", default=".runtime/beta-smoke.db")
     beta_smoke.add_argument("--text", default="@小C-beta 今天先给我一份候选池")
+
+    worker_smoke = sub.add_parser("worker-smoke")
+    worker_smoke.add_argument("--config", default="configs/beta.example.toml")
+    worker_smoke.add_argument("--db", default=".runtime/worker-smoke.db")
+    worker_smoke.add_argument("--max-per-instance", type=int, default=16)
 
     return parser
 
@@ -301,6 +308,61 @@ def main() -> None:
             "handled": result.handled,
             "task_id": result.task_id,
             "reason": result.reason,
+            "sent_messages": [
+                {
+                    "chat_id": message.chat_id,
+                    "message_id": message.message_id,
+                    "text": message.text,
+                }
+                for message in client.sent_messages
+            ],
+        }, ensure_ascii=False, indent=2))
+        return
+
+    if args.command == "worker-smoke":
+        config = load_config(Path(args.config))
+        client = FakeFeishuClient()
+        worker = ConnectorWorker(
+            queue=BoundedIngressQueue(max_per_instance=args.max_per_instance),
+            orchestrator=BetaOrchestratorService(
+                config=config,
+                store=SQLiteTaskStore(Path(args.db)),
+                feishu_client=client,
+            ),
+        )
+        for index, text in enumerate(
+            [
+                "@小C-beta 今天先给我一份候选池",
+                "测试",
+                "@小C-beta 研究一下山西汾酒七层数据",
+            ],
+            start=1,
+        ):
+            worker.enqueue(
+                IngressItem(
+                    "beta",
+                    FeishuMessageEvent(
+                        event_id=f"worker-smoke-event-{index}",
+                        chat_id=config.feishu.group_chat_id,
+                        sender_open_id="smoke-user",
+                        sender_name="BOOS",
+                        text=text,
+                        mentions=(config.feishu.owner_open_id,),
+                        message_id=f"worker-smoke-message-{index}",
+                    ),
+                )
+            )
+        report = worker.drain_once()
+        stats = worker.stats("beta")
+        print(json.dumps({
+            "processed": report.processed,
+            "handled": report.handled,
+            "ignored": report.ignored,
+            "queue": {
+                "current_depth": stats.current_depth,
+                "peak_depth": stats.peak_depth,
+                "overload_count": stats.overload_count,
+            },
             "sent_messages": [
                 {
                     "chat_id": message.chat_id,
