@@ -23,6 +23,7 @@
 
 - [中文产品介绍](docs/INTRO_ZH.md)
 - [飞书优先原则](docs/FEISHU_FIRST_ZH.md)
+- [飞书连接器架构](docs/FEISHU_CONNECTOR_ZH.md)
 - [运行前提与最小配置](docs/PREREQUISITES_ZH.md)
 - [中文安装与快速验证](docs/INSTALL_ZH.md)
 - [中文流程与最终目标](docs/WORKFLOW_ZH.md)
@@ -209,6 +210,7 @@ Supported sample formats:
 - English architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - English rollout: [docs/ROLLOUT.md](docs/ROLLOUT.md)
 - 飞书优先原则: [docs/FEISHU_FIRST_ZH.md](docs/FEISHU_FIRST_ZH.md)
+- 飞书连接器架构: [docs/FEISHU_CONNECTOR_ZH.md](docs/FEISHU_CONNECTOR_ZH.md)
 - 运行前提与最小配置: [docs/PREREQUISITES_ZH.md](docs/PREREQUISITES_ZH.md)
 - 中文安装/验证: [docs/INSTALL_ZH.md](docs/INSTALL_ZH.md)
 - 中文产品说明: [docs/INTRO_ZH.md](docs/INTRO_ZH.md)

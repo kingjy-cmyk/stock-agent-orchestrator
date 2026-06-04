@@ -124,6 +124,7 @@
 - `FakeFeishuClient` 可记录发送请求
 - `BetaOrchestratorService` 可处理 beta 群消息事件
 - `beta-smoke` 可演示 fake 飞书消息创建任务并生成任务卡
+- 参考 Codex 飞书通道二进程模式，新增 `BoundedIngressQueue`
 
 验收标准：
 
@@ -131,6 +132,7 @@
 - formal active 配置会被拒绝
 - 本地任务能渲染为包含任务 ID、状态、责任人、下一步、审批状态、证据的任务卡
 - fake beta 消息能创建任务并生成任务卡发送请求
+- gateway 入口和业务处理之间有有界队列隔离
 
 ### Phase 1B：真实 Feishu Connector MVP
 
