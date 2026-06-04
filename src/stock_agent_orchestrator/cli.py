@@ -22,6 +22,11 @@ from stock_agent_orchestrator.services.beta_callback_probe import (
     callback_probe_report_to_markdown,
     run_beta_callback_probe,
 )
+from stock_agent_orchestrator.services.beta_callback_deploy_plan import (
+    beta_callback_deploy_plan_to_dict,
+    beta_callback_deploy_plan_to_markdown,
+    build_beta_callback_deploy_plan,
+)
 from stock_agent_orchestrator.services.beta_evidence_collector import (
     beta_evidence_collection_to_dict,
     beta_evidence_collection_to_markdown,
@@ -284,6 +289,14 @@ def build_parser() -> argparse.ArgumentParser:
     beta_callback_probe.add_argument("--callback-url", required=True)
     beta_callback_probe.add_argument("--challenge", default="stock-agent-orchestrator-probe")
     beta_callback_probe.add_argument("--format", choices=["json", "markdown"], default="markdown")
+
+    beta_callback_deploy_plan = sub.add_parser("beta-callback-deploy-plan")
+    beta_callback_deploy_plan.add_argument("--callback-url", required=True)
+    beta_callback_deploy_plan.add_argument("--config", default="configs/beta.live.toml")
+    beta_callback_deploy_plan.add_argument("--db", default=".runtime/webhook.db")
+    beta_callback_deploy_plan.add_argument("--host", default="127.0.0.1")
+    beta_callback_deploy_plan.add_argument("--port", type=int, default=8787)
+    beta_callback_deploy_plan.add_argument("--format", choices=["json", "markdown"], default="markdown")
 
     collect_beta_evidence_cmd = sub.add_parser("collect-beta-evidence")
     collect_beta_evidence_cmd.add_argument("--config", default="configs/beta.live.toml")
@@ -744,6 +757,24 @@ def main() -> None:
         )
         print(rendered)
         if not report.ok:
+            raise SystemExit(1)
+        return
+
+    if args.command == "beta-callback-deploy-plan":
+        plan = build_beta_callback_deploy_plan(
+            callback_url=args.callback_url,
+            config_path=args.config,
+            db_path=args.db,
+            host=args.host,
+            port=args.port,
+        )
+        rendered = (
+            beta_callback_deploy_plan_to_markdown(plan)
+            if args.format == "markdown"
+            else json.dumps(beta_callback_deploy_plan_to_dict(plan), ensure_ascii=False, indent=2)
+        )
+        print(rendered)
+        if not plan.ok:
             raise SystemExit(1)
         return
 
