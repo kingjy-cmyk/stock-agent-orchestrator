@@ -11,6 +11,14 @@
 
 ## 使用
 
+先生成真实 beta 交接单，确认用户审批点和 secret 边界：
+
+```bash
+stock-agent-orchestrator beta-live-handoff --shell powershell --callback-url https://your-public-domain.example --task-id BETA-0001 --format markdown
+```
+
+再运行最终准入门：
+
 ```bash
 stock-agent-orchestrator beta-live-final-gate --config configs/beta.live.toml --callback-url https://your-public-domain.example --format markdown
 ```

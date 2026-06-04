@@ -42,26 +42,31 @@ stock-agent-orchestrator application-readiness --format markdown
 
 ## 冲到 90+ 的最短路径
 
-1. 运行 `beta-live-intake-checklist`，确认需要采集的飞书 app、beta 群、open_id、callback 校验字段和本地路径。
-2. 运行 `beta-live-prep-dry-run`，确认本地准备链路能跑通。
-3. 运行 `init-beta-live-config` 生成本地 `configs/beta.live.toml`，再手工填入真实值；或者用 `beta-live-config-from-env` 从环境变量生成。
-4. 运行 `beta-live-config-status`，确认配置存在、已被 `.gitignore` 保护、必要字段已填。
-5. 运行 `beta-live-config-review`，确认配置安全、字段完整、敏感字段脱敏。
-6. 运行 `beta-validation-guide`，确认是否允许进入真实 beta。
-7. 运行 `beta-live-runbook`，生成真实 beta 群操作手册和停止条件。
-8. 运行 `beta-live-launch-packet`，生成飞书开放平台填写项、首轮测试消息和证据清单。
-9. 运行 `beta-live-readiness-bundle`，确认总检查阶段为 `ready_for_real_beta_group_validation`。
-10. 运行 `beta-callback-deploy-plan`，确认公网 callback、飞书事件订阅 URL、本地监听和探测命令一致。
-11. 运行 `beta-live-evidence-rehearsal`，彩排证据收集和报告生成链路。
-12. 运行 `beta-live-message-script`，确认真实 beta 群首轮消息、截图点和失败判据。
-13. 运行 `beta-live-final-gate`，确认最终 stage 为 `ready_to_execute_real_beta_validation`。
-14. 启动 `run-webhook --allow-live-send`。
-15. 运行 `beta-callback-probe`，确认公网 `/healthz` 和 `/webhook` challenge 可用。
-16. 在 beta 群按 message script 发送首轮消息。
-17. 运行 `collect-beta-evidence`，自动保存 `/healthz` 到 `.runtime/healthz.json` 并生成 `docs/BETA_VALIDATION_REPORT_ZH.md`。
-18. 补任务卡截图或录屏路径。
+1. 运行 `beta-live-handoff`，确认用户审批点、字段收集范围、secret 边界和 final gate 前命令顺序。
+2. 运行 `beta-live-intake-checklist`，确认需要采集的飞书 app、beta 群、open_id、callback 校验字段和本地路径。
+3. 运行 `beta-live-prep-dry-run`，确认本地准备链路能跑通。
+4. 运行 `init-beta-live-config` 生成本地 `configs/beta.live.toml`，再手工填入真实值；或者用 `beta-live-config-from-env` 从环境变量生成。
+5. 运行 `beta-live-config-status`，确认配置存在、已被 `.gitignore` 保护、必要字段已填。
+6. 运行 `beta-live-config-review`，确认配置安全、字段完整、敏感字段脱敏。
+7. 运行 `beta-validation-guide`，确认是否允许进入真实 beta。
+8. 运行 `beta-live-runbook`，生成真实 beta 群操作手册和停止条件。
+9. 运行 `beta-live-launch-packet`，生成飞书开放平台填写项、首轮测试消息和证据清单。
+10. 运行 `beta-live-readiness-bundle`，确认总检查阶段为 `ready_for_real_beta_group_validation`。
+11. 运行 `beta-callback-deploy-plan`，确认公网 callback、飞书事件订阅 URL、本地监听和探测命令一致。
+12. 运行 `beta-live-evidence-rehearsal`，彩排证据收集和报告生成链路。
+13. 运行 `beta-live-message-script`，确认真实 beta 群首轮消息、截图点和失败判据。
+14. 运行 `beta-live-final-gate`，确认最终 stage 为 `ready_to_execute_real_beta_validation`。
+15. 启动 `run-webhook --allow-live-send`。
+16. 运行 `beta-callback-probe`，确认公网 `/healthz` 和 `/webhook` challenge 可用。
+17. 在 beta 群按 message script 发送首轮消息。
+18. 运行 `collect-beta-evidence`，自动保存 `/healthz` 到 `.runtime/healthz.json` 并生成 `docs/BETA_VALIDATION_REPORT_ZH.md`。
+19. 补任务卡截图或录屏路径。
 
 推荐先运行：
+
+```bash
+stock-agent-orchestrator beta-live-handoff --shell powershell --callback-url https://your-public-domain.example --task-id BETA-0001 --format markdown
+```
 
 ```bash
 stock-agent-orchestrator beta-live-intake-checklist --shell powershell --format markdown

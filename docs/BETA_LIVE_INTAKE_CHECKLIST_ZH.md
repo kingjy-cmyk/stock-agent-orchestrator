@@ -47,6 +47,10 @@ stock-agent-orchestrator beta-live-intake-checklist --shell bash --format markdo
 ## 推荐顺序
 
 ```bash
+stock-agent-orchestrator beta-live-handoff --shell powershell --callback-url https://your-public-domain.example --task-id BETA-0001 --format markdown
+```
+
+```bash
 stock-agent-orchestrator beta-live-intake-checklist --shell powershell --format markdown
 ```
 

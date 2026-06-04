@@ -29,6 +29,7 @@
 - [飞书 Beta Live 启动包](docs/BETA_LIVE_LAUNCH_PACKET_ZH.md)
 - [飞书 Beta Live 总检查包](docs/BETA_LIVE_READINESS_BUNDLE_ZH.md)
 - [飞书 Beta 证据收集彩排](docs/BETA_LIVE_EVIDENCE_REHEARSAL_ZH.md)
+- [飞书 Beta 交接单](docs/BETA_LIVE_HANDOFF_ZH.md)
 - [飞书 Beta 配置采集清单](docs/BETA_LIVE_INTAKE_CHECKLIST_ZH.md)
 - [飞书 Beta 配置安全审阅](docs/BETA_LIVE_CONFIG_REVIEW_ZH.md)
 - [飞书 Beta Callback 部署预案](docs/BETA_CALLBACK_DEPLOY_PLAN_ZH.md)
@@ -69,7 +70,7 @@ Current status:
 
 - local install/demo/smoke paths are documented
 - Feishu connector has a safe beta preflight gate
-- 123 unit tests pass locally
+- 127 unit tests pass locally
 - real Feishu beta validation is still pending
 
 Current readiness can be checked by command:
@@ -88,6 +89,7 @@ For the application narrative and demo checklist, see:
 - [飞书 Beta Live 启动包](docs/BETA_LIVE_LAUNCH_PACKET_ZH.md)
 - [飞书 Beta Live 总检查包](docs/BETA_LIVE_READINESS_BUNDLE_ZH.md)
 - [飞书 Beta 证据收集彩排](docs/BETA_LIVE_EVIDENCE_REHEARSAL_ZH.md)
+- [飞书 Beta 交接单](docs/BETA_LIVE_HANDOFF_ZH.md)
 - [飞书 Beta 配置采集清单](docs/BETA_LIVE_INTAKE_CHECKLIST_ZH.md)
 - [飞书 Beta 配置安全审阅](docs/BETA_LIVE_CONFIG_REVIEW_ZH.md)
 - [飞书 Beta Callback 部署预案](docs/BETA_CALLBACK_DEPLOY_PLAN_ZH.md)
@@ -272,6 +274,10 @@ For beta safety, the live target chat must also be listed in `feishu.send_allowl
 Before touching a real beta group, run the stricter live preflight gate:
 
 ```bash
+stock-agent-orchestrator beta-live-handoff --shell powershell --callback-url https://your-public-domain.example --task-id BETA-0001 --format markdown
+```
+
+```bash
 stock-agent-orchestrator beta-live-intake-checklist --shell powershell --format markdown
 ```
 
@@ -374,6 +380,7 @@ Supported sample formats:
 - 飞书 Beta Live 启动包: [docs/BETA_LIVE_LAUNCH_PACKET_ZH.md](docs/BETA_LIVE_LAUNCH_PACKET_ZH.md)
 - 飞书 Beta Live 总检查包: [docs/BETA_LIVE_READINESS_BUNDLE_ZH.md](docs/BETA_LIVE_READINESS_BUNDLE_ZH.md)
 - 飞书 Beta 证据收集彩排: [docs/BETA_LIVE_EVIDENCE_REHEARSAL_ZH.md](docs/BETA_LIVE_EVIDENCE_REHEARSAL_ZH.md)
+- 飞书 Beta 交接单: [docs/BETA_LIVE_HANDOFF_ZH.md](docs/BETA_LIVE_HANDOFF_ZH.md)
 - 飞书 Beta 配置采集清单: [docs/BETA_LIVE_INTAKE_CHECKLIST_ZH.md](docs/BETA_LIVE_INTAKE_CHECKLIST_ZH.md)
 - 飞书 Beta 配置安全审阅: [docs/BETA_LIVE_CONFIG_REVIEW_ZH.md](docs/BETA_LIVE_CONFIG_REVIEW_ZH.md)
 - 飞书 Beta Callback 部署预案: [docs/BETA_CALLBACK_DEPLOY_PLAN_ZH.md](docs/BETA_CALLBACK_DEPLOY_PLAN_ZH.md)

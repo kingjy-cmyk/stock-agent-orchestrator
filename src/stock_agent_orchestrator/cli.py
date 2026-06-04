@@ -63,6 +63,11 @@ from stock_agent_orchestrator.services.beta_live_final_gate import (
     beta_live_final_gate_to_markdown,
     build_beta_live_final_gate,
 )
+from stock_agent_orchestrator.services.beta_live_handoff import (
+    beta_live_handoff_to_dict,
+    beta_live_handoff_to_markdown,
+    build_beta_live_handoff,
+)
 from stock_agent_orchestrator.services.beta_live_intake_checklist import (
     beta_live_intake_checklist_to_dict,
     beta_live_intake_checklist_to_markdown,
@@ -284,6 +289,12 @@ def build_parser() -> argparse.ArgumentParser:
     beta_live_intake_checklist = sub.add_parser("beta-live-intake-checklist")
     beta_live_intake_checklist.add_argument("--shell", choices=["powershell", "bash"], default="powershell")
     beta_live_intake_checklist.add_argument("--format", choices=["json", "markdown"], default="markdown")
+
+    beta_live_handoff = sub.add_parser("beta-live-handoff")
+    beta_live_handoff.add_argument("--callback-url", default="https://your-public-domain.example")
+    beta_live_handoff.add_argument("--shell", choices=["powershell", "bash"], default="powershell")
+    beta_live_handoff.add_argument("--task-id", default="BETA-0001")
+    beta_live_handoff.add_argument("--format", choices=["json", "markdown"], default="markdown")
 
     beta_validation_report = sub.add_parser("beta-validation-report")
     beta_validation_report.add_argument("--config", default="configs/beta.live.toml")
@@ -749,6 +760,20 @@ def main() -> None:
             beta_live_intake_checklist_to_markdown(checklist)
             if args.format == "markdown"
             else json.dumps(beta_live_intake_checklist_to_dict(checklist), ensure_ascii=False, indent=2)
+        )
+        print(rendered)
+        return
+
+    if args.command == "beta-live-handoff":
+        handoff = build_beta_live_handoff(
+            callback_url=args.callback_url,
+            shell=args.shell,
+            task_id=args.task_id,
+        )
+        rendered = (
+            beta_live_handoff_to_markdown(handoff)
+            if args.format == "markdown"
+            else json.dumps(beta_live_handoff_to_dict(handoff), ensure_ascii=False, indent=2)
         )
         print(rendered)
         return
