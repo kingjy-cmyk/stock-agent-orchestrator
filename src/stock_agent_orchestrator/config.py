@@ -47,6 +47,7 @@ class FeishuConfig:
     send_mode: str = "fake"
     send_allowlist: list[str] = field(default_factory=list)
     verification_token: str = ""
+    encrypt_key: str = ""
 
 
 @dataclass(frozen=True, slots=True)

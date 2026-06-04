@@ -24,6 +24,7 @@ copy configs\beta.live.example.toml configs\beta.live.toml
 - `feishu.app_secret`
 - `feishu.send_allowlist`
 - `feishu.verification_token`
+- `feishu.encrypt_key`
 - `paths.candidate_list`
 - `paths.seven_layer_reports`
 - `paths.entry_monitor_reports`
@@ -52,6 +53,7 @@ stock-agent-orchestrator beta-live-preflight --config configs/beta.live.toml --c
 - 新规则必须用户审批。
 - 必填字段没有占位符。
 - `feishu.verification_token` 已配置，用于飞书 callback token 校验。
+- `feishu.encrypt_key` 已配置，用于 `X-Lark-Signature` 请求签名校验。
 - callback URL 是公网 `https`。
 
 ## 通过后怎么做
@@ -80,5 +82,6 @@ stock-agent-orchestrator run-webhook --config configs/beta.live.toml --allow-liv
 
 - 该命令只做本地静态准入检查，不探测公网 URL 是否真的可访问。
 - 已支持飞书 event callback verification token 校验。
-- 飞书 encrypt key 解密和请求签名校验还未实现。
-- 去重和 operation error 记录仍是内存级，服务重启会丢失。
+- 已支持基于 `encrypt_key` 的 `X-Lark-Signature` 请求签名校验。
+- 还没有实现 encrypt payload 解密；如果飞书后台开启加密推送，后续还需要补解密能力。
+- 去重和 operation error 记录已持久化到 SQLite。

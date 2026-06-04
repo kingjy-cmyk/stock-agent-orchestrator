@@ -30,3 +30,4 @@ app_id = ""
 app_secret = ""
 send_allowlist = ["replace-me"]
 verification_token = ""
+encrypt_key = ""

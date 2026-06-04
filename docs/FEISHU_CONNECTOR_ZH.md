@@ -47,6 +47,7 @@ Feishu Gateway
 - `FeishuOperationGateway`：对标 Codex Gateway.Apply 的操作应用接口。
 - `GuardedOperationGateway`：发送 allowlist 和 operation error 记录。
 - `verification_token`：飞书 event callback token 校验。
+- `encrypt_key`：用于飞书 `X-Lark-Signature` 请求签名校验。
 - `FakeFeishuClient`：测试用发送器。
 - `LiveFeishuClient`：真实飞书发送器，默认不启用。
 - `send_card`：发送带 `config.update_multi=true` 的飞书 interactive card。
@@ -92,6 +93,7 @@ stock-agent-orchestrator run-webhook --config configs/beta.example.toml --host 1
 - 项目模式是 `active`
 - `feishu.group_chat_id` 必须在 `feishu.send_allowlist` 内
 - `feishu.verification_token` 必须配置
+- `feishu.encrypt_key` 建议配置；配置后 callback 必须通过 `X-Lark-Signature` 校验
 
 不满足任一条件，都不会向真实飞书群发送消息。
 
@@ -127,6 +129,7 @@ stock-agent-orchestrator beta-live-preflight --config configs/beta.live.toml --c
 - `/healthz` 暴露 `connected/degraded`、accepted、enqueued、duplicate、operation error 计数。
 - `GuardedOperationGateway` 会拒绝不在 `send_allowlist` 内的 chat_id。
 - `FeishuWebhookGateway` 会在配置 `verification_token` 后拒绝 token 不匹配的 callback。
+- HTTP webhook 会在配置 `encrypt_key` 后校验 `X-Lark-Request-Timestamp`、`X-Lark-Request-Nonce`、`X-Lark-Signature`。
 - operation 发送失败会记录到 gateway，并让业务结果返回 `operation_error`，避免 worker 直接崩溃。
 - 小智-beta / 小巴-beta 的后续消息可推进同一任务，并发送更新后的任务卡 markdown。
 - 小智-beta / 小巴-beta 消息中显式包含 `BETA-0001` 时，会优先绑定该任务，降低多任务并行误更新风险。
@@ -150,7 +153,7 @@ PATCH /open-apis/im/v1/messages/:message_id
 
 当前限制：
 
-- 还没有飞书 encrypt key 解密和请求签名校验。
+- 还没有飞书 encrypt payload 解密；当前只实现请求签名校验。
 - 还没有真正的 rate limit，只有限制入口队列长度。
 - interactive card update 已完成本地和请求形态测试，但还没有真实 beta 群验收证据。
 - 还没有根据 reply/thread/message_id 绑定原任务卡。

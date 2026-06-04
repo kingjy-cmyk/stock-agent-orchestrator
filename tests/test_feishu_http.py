@@ -9,7 +9,7 @@ from pathlib import Path
 
 from stock_agent_orchestrator.config import load_config
 from stock_agent_orchestrator.connectors.feishu import FakeFeishuClient
-from stock_agent_orchestrator.connectors.feishu_http import build_webhook_server
+from stock_agent_orchestrator.connectors.feishu_http import build_webhook_server, calculate_lark_signature
 
 
 class FeishuHTTPTests(unittest.TestCase):
@@ -103,15 +103,121 @@ class FeishuHTTPTests(unittest.TestCase):
                 server.server_close()
                 thread.join(timeout=5)
 
+    def test_http_webhook_accepts_valid_lark_signature_when_encrypt_key_is_configured(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            client = FakeFeishuClient()
+            config = load_config(Path("configs/beta.example.toml"))
+            config = replace(config, feishu=replace(config.feishu, encrypt_key="encrypt-key"))
+            server = build_webhook_server(
+                host="127.0.0.1",
+                port=0,
+                config=config,
+                db_path=Path(tmp) / "beta.db",
+                feishu_client=client,
+            )
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            try:
+                payload = self._message_payload()
+                result = self._post_json(
+                    f"http://127.0.0.1:{server.server_address[1]}/webhook",
+                    payload,
+                    encrypt_key="encrypt-key",
+                )
+                self.assertTrue(result["accepted"])
+                self.assertTrue(result["enqueued"])
+                self.assertEqual(len(client.sent_messages), 1)
+            finally:
+                server.shutdown()
+                server.server_close()
+                thread.join(timeout=5)
+
+    def test_http_webhook_rejects_missing_lark_signature_when_encrypt_key_is_configured(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            config = load_config(Path("configs/beta.example.toml"))
+            config = replace(config, feishu=replace(config.feishu, encrypt_key="encrypt-key"))
+            server = build_webhook_server(
+                host="127.0.0.1",
+                port=0,
+                config=config,
+                db_path=Path(tmp) / "beta.db",
+            )
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            try:
+                req = urllib.request.Request(
+                    f"http://127.0.0.1:{server.server_address[1]}/webhook",
+                    data=json.dumps(self._message_payload()).encode("utf-8"),
+                    headers={"Content-Type": "application/json"},
+                    method="POST",
+                )
+                with self.assertRaises(urllib.error.HTTPError) as raised:
+                    urllib.request.urlopen(req, timeout=5)
+                self.assertEqual(raised.exception.code, 403)
+            finally:
+                server.shutdown()
+                server.server_close()
+                thread.join(timeout=5)
+
+    def test_http_webhook_rejects_invalid_lark_signature(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            config = load_config(Path("configs/beta.example.toml"))
+            config = replace(config, feishu=replace(config.feishu, encrypt_key="encrypt-key"))
+            server = build_webhook_server(
+                host="127.0.0.1",
+                port=0,
+                config=config,
+                db_path=Path(tmp) / "beta.db",
+            )
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            try:
+                body = json.dumps(self._message_payload()).encode("utf-8")
+                req = urllib.request.Request(
+                    f"http://127.0.0.1:{server.server_address[1]}/webhook",
+                    data=body,
+                    headers={
+                        "Content-Type": "application/json",
+                        "X-Lark-Request-Timestamp": "1780581200",
+                        "X-Lark-Request-Nonce": "nonce",
+                        "X-Lark-Signature": "bad-signature",
+                    },
+                    method="POST",
+                )
+                with self.assertRaises(urllib.error.HTTPError) as raised:
+                    urllib.request.urlopen(req, timeout=5)
+                self.assertEqual(raised.exception.code, 403)
+            finally:
+                server.shutdown()
+                server.server_close()
+                thread.join(timeout=5)
+
     def _get_json(self, url: str) -> dict:
         with urllib.request.urlopen(url, timeout=5) as response:
             return json.loads(response.read().decode("utf-8"))
 
-    def _post_json(self, url: str, payload: dict) -> dict:
+    def _post_json(self, url: str, payload: dict, *, encrypt_key: str = "") -> dict:
+        body = json.dumps(payload).encode("utf-8")
+        headers = {"Content-Type": "application/json"}
+        if encrypt_key:
+            timestamp = "1780581200"
+            nonce = "nonce"
+            headers.update(
+                {
+                    "X-Lark-Request-Timestamp": timestamp,
+                    "X-Lark-Request-Nonce": nonce,
+                    "X-Lark-Signature": calculate_lark_signature(
+                        timestamp=timestamp,
+                        nonce=nonce,
+                        encrypt_key=encrypt_key,
+                        raw_body=body,
+                    ),
+                }
+            )
         req = urllib.request.Request(
             url,
-            data=json.dumps(payload).encode("utf-8"),
-            headers={"Content-Type": "application/json"},
+            data=body,
+            headers=headers,
             method="POST",
         )
         with urllib.request.urlopen(req, timeout=5) as response:

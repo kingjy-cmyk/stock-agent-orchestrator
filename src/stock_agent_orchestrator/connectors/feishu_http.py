@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import hmac
 import json
 from dataclasses import asdict
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -19,6 +21,7 @@ from stock_agent_orchestrator.services.ingress import BoundedIngressQueue
 class FeishuWebhookHTTPHandler(BaseHTTPRequestHandler):
     gateway: FeishuWebhookGateway
     drain: bool = True
+    encrypt_key: str = ""
 
     def do_GET(self) -> None:
         if self.path != "/healthz":
@@ -31,7 +34,15 @@ class FeishuWebhookHTTPHandler(BaseHTTPRequestHandler):
             self._write_json(404, {"ok": False, "error": "not_found"})
             return
         try:
-            payload = self._read_json()
+            raw_body = self._read_body()
+        except ValueError as exc:
+            self._write_json(400, {"ok": False, "error": str(exc)})
+            return
+        if not self._signature_is_valid(raw_body):
+            self._write_json(403, {"accepted": False, "enqueued": False, "reason": "invalid_lark_signature"})
+            return
+        try:
+            payload = self._decode_json(raw_body)
         except ValueError as exc:
             self._write_json(400, {"ok": False, "error": str(exc)})
             return
@@ -51,12 +62,14 @@ class FeishuWebhookHTTPHandler(BaseHTTPRequestHandler):
     def log_message(self, format: str, *args: Any) -> None:
         return
 
-    def _read_json(self) -> dict[str, Any]:
+    def _read_body(self) -> bytes:
         try:
             length = int(self.headers.get("Content-Length", "0"))
         except ValueError as exc:
             raise ValueError("invalid content length") from exc
-        raw = self.rfile.read(length)
+        return self.rfile.read(length)
+
+    def _decode_json(self, raw: bytes) -> dict[str, Any]:
         if not raw:
             return {}
         try:
@@ -66,6 +79,23 @@ class FeishuWebhookHTTPHandler(BaseHTTPRequestHandler):
         if not isinstance(payload, dict):
             raise ValueError("json body must be an object")
         return payload
+
+    def _signature_is_valid(self, raw_body: bytes) -> bool:
+        encrypt_key = self.encrypt_key.strip()
+        if not encrypt_key:
+            return True
+        timestamp = self.headers.get("X-Lark-Request-Timestamp", "")
+        nonce = self.headers.get("X-Lark-Request-Nonce", "")
+        signature = self.headers.get("X-Lark-Signature", "")
+        if not timestamp or not nonce or not signature:
+            return False
+        expected = calculate_lark_signature(
+            timestamp=timestamp,
+            nonce=nonce,
+            encrypt_key=encrypt_key,
+            raw_body=raw_body,
+        )
+        return hmac.compare_digest(expected, signature)
 
     def _write_json(self, status: int, payload: dict[str, Any]) -> None:
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
@@ -111,6 +141,7 @@ def build_webhook_server(
         pass
 
     Handler.gateway = gateway
+    Handler.encrypt_key = config.feishu.encrypt_key
     return ThreadingHTTPServer((host, port), Handler)
 
 
@@ -141,3 +172,8 @@ def webhook_result_to_dict(result: WebhookResult) -> dict[str, Any]:
         "reason": result.reason,
         "worker_report": asdict(result.worker_report) if result.worker_report else None,
     }
+
+
+def calculate_lark_signature(*, timestamp: str, nonce: str, encrypt_key: str, raw_body: bytes) -> str:
+    payload = (timestamp + nonce + encrypt_key).encode("utf-8") + raw_body
+    return hashlib.sha256(payload).hexdigest()

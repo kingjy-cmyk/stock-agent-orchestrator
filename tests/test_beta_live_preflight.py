@@ -56,6 +56,7 @@ app_id = "cli_a_real_app"
 app_secret = "real-secret-placeholder-for-test"
 send_allowlist = ["oc_beta_chat"]
 verification_token = "verify-token"
+encrypt_key = "encrypt-key"
 """,
                 encoding="utf-8",
             )
