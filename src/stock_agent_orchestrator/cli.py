@@ -43,6 +43,11 @@ from stock_agent_orchestrator.services.beta_live_config_status import (
     beta_live_config_status_to_markdown,
     inspect_beta_live_config,
 )
+from stock_agent_orchestrator.services.beta_live_config_review import (
+    beta_live_config_review_to_dict,
+    beta_live_config_review_to_markdown,
+    build_beta_live_config_review,
+)
 from stock_agent_orchestrator.services.beta_live_evidence_rehearsal import (
     beta_live_evidence_rehearsal_to_dict,
     beta_live_evidence_rehearsal_to_markdown,
@@ -190,6 +195,13 @@ def build_parser() -> argparse.ArgumentParser:
     beta_live_config_status.add_argument("--repo-root", default=".")
     beta_live_config_status.add_argument("--config", default="configs/beta.live.toml")
     beta_live_config_status.add_argument("--format", choices=["json", "markdown"], default="markdown")
+
+    beta_live_config_review = sub.add_parser("beta-live-config-review")
+    beta_live_config_review.add_argument("--repo-root", default=".")
+    beta_live_config_review.add_argument("--config", default="configs/beta.live.toml")
+    beta_live_config_review.add_argument("--callback-url", default="https://your-public-domain.example")
+    beta_live_config_review.add_argument("--shell", choices=["powershell", "bash"], default="powershell")
+    beta_live_config_review.add_argument("--format", choices=["json", "markdown"], default="markdown")
 
     app_readiness = sub.add_parser("application-readiness")
     app_readiness.add_argument("--repo-root", default=".")
@@ -529,6 +541,23 @@ def main() -> None:
         )
         print(rendered)
         if not status.ok:
+            raise SystemExit(1)
+        return
+
+    if args.command == "beta-live-config-review":
+        review = build_beta_live_config_review(
+            config_path=Path(args.config),
+            repo_root=Path(args.repo_root),
+            callback_url=args.callback_url,
+            shell=args.shell,
+        )
+        rendered = (
+            beta_live_config_review_to_markdown(review)
+            if args.format == "markdown"
+            else json.dumps(beta_live_config_review_to_dict(review), ensure_ascii=False, indent=2)
+        )
+        print(rendered)
+        if not review.ok:
             raise SystemExit(1)
         return
 

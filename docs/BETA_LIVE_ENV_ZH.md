@@ -59,6 +59,12 @@ stock-agent-orchestrator beta-live-config-from-env --output configs/beta.live.to
 stock-agent-orchestrator beta-live-config-status --config configs/beta.live.toml --format markdown
 ```
 
+再做一次配置安全审阅，确认敏感字段只脱敏显示：
+
+```bash
+stock-agent-orchestrator beta-live-config-review --config configs/beta.live.toml --callback-url https://your-public-domain.example --format markdown
+```
+
 如果 `ready_for_preflight = true`，再进入：
 
 ```bash
