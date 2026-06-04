@@ -47,11 +47,12 @@ stock-agent-orchestrator application-readiness --format markdown
 3. 运行 `beta-live-config-status`，确认配置存在、已被 `.gitignore` 保护、必要字段已填。
 4. 运行 `beta-validation-guide`，确认是否允许进入真实 beta。
 5. 运行 `beta-live-runbook`，生成真实 beta 群操作手册和停止条件。
-6. 启动 `run-webhook --allow-live-send`。
-7. 运行 `beta-callback-probe`，确认公网 `/healthz` 和 `/webhook` challenge 可用。
-8. 在 beta 群发送 `@小C-beta 今天先给我一份候选池`。
-9. 运行 `collect-beta-evidence`，自动保存 `/healthz` 到 `.runtime/healthz.json` 并生成 `docs/BETA_VALIDATION_REPORT_ZH.md`。
-10. 补任务卡截图或录屏路径。
+6. 运行 `beta-live-launch-packet`，生成飞书开放平台填写项、首轮测试消息和证据清单。
+7. 启动 `run-webhook --allow-live-send`。
+8. 运行 `beta-callback-probe`，确认公网 `/healthz` 和 `/webhook` challenge 可用。
+9. 在 beta 群发送 `@小C-beta 今天先给我一份候选池`。
+10. 运行 `collect-beta-evidence`，自动保存 `/healthz` 到 `.runtime/healthz.json` 并生成 `docs/BETA_VALIDATION_REPORT_ZH.md`。
+11. 补任务卡截图或录屏路径。
 
 推荐先运行：
 
@@ -77,6 +78,10 @@ stock-agent-orchestrator beta-validation-guide --config configs/beta.live.toml -
 
 ```bash
 stock-agent-orchestrator beta-live-runbook --config configs/beta.live.toml --callback-url https://your-public-domain.example --format markdown
+```
+
+```bash
+stock-agent-orchestrator beta-live-launch-packet --config configs/beta.live.toml --callback-url https://your-public-domain.example --format markdown
 ```
 
 真实 beta 群跑通后收集证据：

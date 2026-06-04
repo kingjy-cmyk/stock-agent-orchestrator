@@ -26,6 +26,7 @@
 - [演示脚本](docs/DEMO_SCRIPT_ZH.md)
 - [飞书 Beta 验收向导](docs/BETA_VALIDATION_GUIDE_ZH.md)
 - [飞书 Beta Live Runbook](docs/BETA_LIVE_RUNBOOK_ZH.md)
+- [飞书 Beta Live 启动包](docs/BETA_LIVE_LAUNCH_PACKET_ZH.md)
 - [Beta Live 环境变量配置](docs/BETA_LIVE_ENV_ZH.md)
 - [飞书 Beta 验证报告模板](docs/BETA_VALIDATION_REPORT_TEMPLATE_ZH.md)
 - [中文产品介绍](docs/INTRO_ZH.md)
@@ -61,7 +62,7 @@ Current status:
 
 - local install/demo/smoke paths are documented
 - Feishu connector has a safe beta preflight gate
-- 96 unit tests pass locally
+- 99 unit tests pass locally
 - real Feishu beta validation is still pending
 
 Current readiness can be checked by command:
@@ -77,6 +78,7 @@ For the application narrative and demo checklist, see:
 - [演示脚本](docs/DEMO_SCRIPT_ZH.md)
 - [飞书 Beta 验收向导](docs/BETA_VALIDATION_GUIDE_ZH.md)
 - [飞书 Beta Live Runbook](docs/BETA_LIVE_RUNBOOK_ZH.md)
+- [飞书 Beta Live 启动包](docs/BETA_LIVE_LAUNCH_PACKET_ZH.md)
 - [飞书 Beta 验证报告模板](docs/BETA_VALIDATION_REPORT_TEMPLATE_ZH.md)
 
 ## Product Shape
@@ -283,6 +285,12 @@ Generate the real beta runbook before starting live webhook sending:
 stock-agent-orchestrator beta-live-runbook --config configs/beta.live.toml --callback-url https://your-public-domain.example --format markdown
 ```
 
+Generate the real beta launch packet before touching the beta group:
+
+```bash
+stock-agent-orchestrator beta-live-launch-packet --config configs/beta.live.toml --callback-url https://your-public-domain.example --format markdown
+```
+
 After a real beta run, collect `/healthz` and generate a validation report:
 
 ```bash
@@ -311,6 +319,7 @@ Supported sample formats:
 - 演示脚本: [docs/DEMO_SCRIPT_ZH.md](docs/DEMO_SCRIPT_ZH.md)
 - 飞书 Beta 验证报告模板: [docs/BETA_VALIDATION_REPORT_TEMPLATE_ZH.md](docs/BETA_VALIDATION_REPORT_TEMPLATE_ZH.md)
 - 飞书 Beta Live Runbook: [docs/BETA_LIVE_RUNBOOK_ZH.md](docs/BETA_LIVE_RUNBOOK_ZH.md)
+- 飞书 Beta Live 启动包: [docs/BETA_LIVE_LAUNCH_PACKET_ZH.md](docs/BETA_LIVE_LAUNCH_PACKET_ZH.md)
 - Beta Live 环境变量配置: [docs/BETA_LIVE_ENV_ZH.md](docs/BETA_LIVE_ENV_ZH.md)
 - 飞书优先原则: [docs/FEISHU_FIRST_ZH.md](docs/FEISHU_FIRST_ZH.md)
 - 飞书连接器架构: [docs/FEISHU_CONNECTOR_ZH.md](docs/FEISHU_CONNECTOR_ZH.md)

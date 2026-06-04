@@ -46,12 +46,13 @@
 - `beta-live-preflight` 真实 beta 前准入检查。
 - `beta-validation-guide` 真实 beta 验收向导。
 - `beta-live-runbook` 真实 beta 群运行手册。
+- `beta-live-launch-packet` 真实 beta 群启动包，输出飞书开放平台填写项、测试消息和证据清单。
 - `beta-callback-probe` 公网 callback 探测。
 - 小智-beta / 小巴-beta 后续消息更新同一任务的 MVP。
 - agent 后续消息可通过显式 `BETA-0001` 绑定目标任务。
 - 任务 context 已保存任务卡 `message_id`，后续进展优先更新同一张 interactive card。
 - 中文说明、安装、维护、路线图、飞书连接器文档。
-- 单元测试 96 项通过。
+- 单元测试 99 项通过。
 
 ## 当前边界
 
@@ -116,6 +117,7 @@ stock-agent-orchestrator beta-live-config-from-env --output configs/beta.live.to
 stock-agent-orchestrator beta-live-config-status --config configs/beta.live.toml --format markdown
 stock-agent-orchestrator beta-validation-guide --config configs/beta.live.toml --callback-url https://your-public-domain.example --format markdown
 stock-agent-orchestrator beta-live-runbook --config configs/beta.live.toml --callback-url https://your-public-domain.example --format markdown
+stock-agent-orchestrator beta-live-launch-packet --config configs/beta.live.toml --callback-url https://your-public-domain.example --format markdown
 stock-agent-orchestrator beta-live-preflight --config configs/beta.live.toml --callback-url https://your-public-domain.example
 stock-agent-orchestrator beta-callback-probe --config configs/beta.live.toml --callback-url https://your-public-domain.example --format markdown
 ```
@@ -126,4 +128,4 @@ stock-agent-orchestrator beta-callback-probe --config configs/beta.live.toml --c
 
 Codex 在这个项目中承担了长期工程 owner 的角色：从需求澄清、架构拆分、连接器对标、配置安全、测试覆盖，到 GitHub 仓库维护和申请材料沉淀，都是按阶段推进并提交的。
 
-当前版本已实现本地可运行 CLI、飞书 webhook MVP、安全 preflight、任务状态机、fake beta 验证和完整中文文档。下一步会进入真实飞书 beta 群验证。
+当前版本已实现本地可运行 CLI、飞书 webhook MVP、安全 preflight、任务状态机、fake beta 验证、真实 beta 启动包和完整中文文档。下一步会进入真实飞书 beta 群验证。

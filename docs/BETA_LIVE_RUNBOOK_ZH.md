@@ -27,13 +27,14 @@ stock-agent-orchestrator beta-live-runbook --config configs/beta.live.toml --cal
 3. 准备公网 HTTPS callback。
 4. 运行 `beta-live-config-status`，确认没有占位符且 secret 已脱敏显示。
 5. 运行 `beta-live-runbook`。
-6. 如果 runbook 允许开始，再启动 `run-webhook --allow-live-send`。
-7. 运行 `beta-callback-probe`。
-8. 在飞书开放平台配置事件订阅 webhook URL。
-9. 在 beta 群发送一次委托。
-10. 确认任务卡出现并可被后续消息原地更新。
-11. 运行 `collect-beta-evidence` 生成验证报告。
-12. 运行 `application-readiness`。
+6. 运行 `beta-live-launch-packet`，生成飞书开放平台填写项、首轮测试消息和证据清单。
+7. 如果 runbook 和 launch packet 都允许开始，再启动 `run-webhook --allow-live-send`。
+8. 运行 `beta-callback-probe`。
+9. 在飞书开放平台配置事件订阅 webhook URL。
+10. 在 beta 群发送一次委托。
+11. 确认任务卡出现并可被后续消息原地更新。
+12. 运行 `collect-beta-evidence` 生成验证报告。
+13. 运行 `application-readiness`。
 
 ## 必须停止的情况
 

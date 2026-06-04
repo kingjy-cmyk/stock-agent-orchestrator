@@ -48,6 +48,11 @@ from stock_agent_orchestrator.services.beta_live_preflight import (
     preflight_report_to_markdown,
     run_beta_live_preflight,
 )
+from stock_agent_orchestrator.services.beta_live_launch_packet import (
+    beta_live_launch_packet_to_dict,
+    beta_live_launch_packet_to_markdown,
+    build_beta_live_launch_packet,
+)
 from stock_agent_orchestrator.services.beta_live_prep_dry_run import (
     beta_live_prep_dry_run_to_dict,
     beta_live_prep_dry_run_to_markdown,
@@ -192,6 +197,15 @@ def build_parser() -> argparse.ArgumentParser:
     beta_live_runbook.add_argument("--healthz-json", default=".runtime/healthz.json")
     beta_live_runbook.add_argument("--report-output", default="docs/BETA_VALIDATION_REPORT_ZH.md")
     beta_live_runbook.add_argument("--format", choices=["json", "markdown"], default="markdown")
+
+    beta_live_launch_packet = sub.add_parser("beta-live-launch-packet")
+    beta_live_launch_packet.add_argument("--repo-root", default=".")
+    beta_live_launch_packet.add_argument("--config", default="configs/beta.live.toml")
+    beta_live_launch_packet.add_argument("--callback-url", required=True)
+    beta_live_launch_packet.add_argument("--db", default=".runtime/webhook.db")
+    beta_live_launch_packet.add_argument("--healthz-json", default=".runtime/healthz.json")
+    beta_live_launch_packet.add_argument("--report-output", default="docs/BETA_VALIDATION_REPORT_ZH.md")
+    beta_live_launch_packet.add_argument("--format", choices=["json", "markdown"], default="markdown")
 
     beta_validation_report = sub.add_parser("beta-validation-report")
     beta_validation_report.add_argument("--config", default="configs/beta.live.toml")
@@ -535,6 +549,26 @@ def main() -> None:
         )
         print(rendered)
         if not runbook.ready_to_start:
+            raise SystemExit(1)
+        return
+
+    if args.command == "beta-live-launch-packet":
+        packet = build_beta_live_launch_packet(
+            config=load_config(Path(args.config)),
+            callback_url=args.callback_url,
+            repo_root=Path(args.repo_root),
+            config_path=args.config,
+            db_path=args.db,
+            healthz_json_path=args.healthz_json,
+            report_path=args.report_output,
+        )
+        rendered = (
+            beta_live_launch_packet_to_markdown(packet)
+            if args.format == "markdown"
+            else json.dumps(beta_live_launch_packet_to_dict(packet), ensure_ascii=False, indent=2)
+        )
+        print(rendered)
+        if not packet.ready_to_launch:
             raise SystemExit(1)
         return
 
