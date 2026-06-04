@@ -34,17 +34,22 @@ stock-agent-orchestrator beta-validation-guide --config configs/beta.live.toml -
 ## 推荐顺序
 
 1. 运行 `init-beta-live-config` 生成本地 `configs/beta.live.toml`。
-2. 运行 `beta-validation-guide`。
-3. 如果向导显示 `fix_preflight_before_live_beta`，先修配置。
-4. 如果向导显示 `run_live_beta_and_collect_evidence`，先运行 `beta-live-runbook`。
-5. 按 runbook 启动 `run-webhook --allow-live-send`。
-6. 运行 `beta-callback-probe`，确认公网 `/healthz` 和 `/webhook` challenge 都可用。
-7. 在飞书开放平台配置 event subscription。
-8. 在 beta 群发送一次委托。
-9. 运行 `collect-beta-evidence`，自动保存 `/healthz` JSON 并生成 `docs/BETA_VALIDATION_REPORT_ZH.md`。
-10. 再运行 `application-readiness`。
+2. 运行 `beta-live-config-status`，确认配置状态。
+3. 运行 `beta-validation-guide`。
+4. 如果向导显示 `fix_preflight_before_live_beta`，先修配置。
+5. 如果向导显示 `run_live_beta_and_collect_evidence`，先运行 `beta-live-runbook`。
+6. 按 runbook 启动 `run-webhook --allow-live-send`。
+7. 运行 `beta-callback-probe`，确认公网 `/healthz` 和 `/webhook` challenge 都可用。
+8. 在飞书开放平台配置 event subscription。
+9. 在 beta 群发送一次委托。
+10. 运行 `collect-beta-evidence`，自动保存 `/healthz` JSON 并生成 `docs/BETA_VALIDATION_REPORT_ZH.md`。
+11. 再运行 `application-readiness`。
 
 真实 beta runbook：
+
+```bash
+stock-agent-orchestrator beta-live-config-status --config configs/beta.live.toml --format markdown
+```
 
 ```bash
 stock-agent-orchestrator beta-live-runbook --config configs/beta.live.toml --callback-url https://your-public-domain.example --format markdown

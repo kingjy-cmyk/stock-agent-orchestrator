@@ -313,6 +313,12 @@ stock-agent-orchestrator init-beta-live-config --output configs/beta.live.toml
 
 `configs/beta.live.toml` 包含 `app_secret`、`verification_token`、`encrypt_key`，不要提交到 GitHub。
 
+填完真实值后先检查本地配置状态，确认 secret 不会在输出中明文展示：
+
+```bash
+stock-agent-orchestrator beta-live-config-status --config configs/beta.live.toml --format markdown
+```
+
 进入真实 beta 群前必须先跑：
 
 ```bash

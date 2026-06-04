@@ -90,7 +90,20 @@ stock-agent-orchestrator beta-live-preflight --config configs/beta.live.example.
 - 有公网 https callback。
 - `configs/beta.live.toml` 已填真实值。
 
-### 1. 跑 preflight
+### 1. 检查 live 配置状态
+
+```bash
+stock-agent-orchestrator beta-live-config-status --config configs/beta.live.toml --format markdown
+```
+
+期望：
+
+- `exists = true`
+- `gitignored = true`
+- `ready_for_preflight = true`
+- secret 字段显示 `<redacted>`
+
+### 2. 跑 preflight
 
 ```bash
 stock-agent-orchestrator beta-live-preflight --config configs/beta.live.toml --callback-url https://your-public-domain.example --format markdown
@@ -102,7 +115,7 @@ stock-agent-orchestrator beta-live-preflight --config configs/beta.live.toml --c
 - 输出 `webhook_url`
 - 输出 `healthz_url`
 
-### 2. 生成 live runbook
+### 3. 生成 live runbook
 
 ```bash
 stock-agent-orchestrator beta-live-runbook --config configs/beta.live.toml --callback-url https://your-public-domain.example --format markdown
@@ -114,17 +127,17 @@ stock-agent-orchestrator beta-live-runbook --config configs/beta.live.toml --cal
 - 输出 `Commands`
 - 输出 `Stop Conditions`
 
-### 3. 启动 webhook
+### 4. 启动 webhook
 
 ```bash
 stock-agent-orchestrator run-webhook --config configs/beta.live.toml --allow-live-send
 ```
 
-### 4. 配置飞书事件订阅
+### 5. 配置飞书事件订阅
 
 把 preflight 输出的 `webhook_url` 填到飞书开放平台事件订阅 callback。
 
-### 5. 在 beta 群委托
+### 6. 在 beta 群委托
 
 ```text
 @小C-beta 今天先给我一份候选池
@@ -135,7 +148,7 @@ stock-agent-orchestrator run-webhook --config configs/beta.live.toml --allow-liv
 - beta 群出现 `BETA-0001` 任务卡。
 - 任务卡展示目标、意图、状态、当前责任人、审批状态。
 
-### 5.1 Agent 后续消息
+### 6.1 Agent 后续消息
 
 让小巴-beta 在同一 beta 群回复：
 
@@ -150,7 +163,7 @@ BETA-0001 候选池已筛出，RSI<35 共 3 只
 - 群里出现更新后的任务卡 markdown。
 - 如果 beta 群里有多个任务，消息中的 `BETA-0001` 会优先作为绑定依据。
 
-### 6. 检查健康状态
+### 7. 检查健康状态
 
 访问：
 
@@ -164,7 +177,7 @@ https://your-public-domain.example/healthz
 - `operation_error_count = 0`
 - `duplicate_count` 没有异常增长
 
-### 7. 收集证据并生成验证报告
+### 8. 收集证据并生成验证报告
 
 ```bash
 stock-agent-orchestrator collect-beta-evidence \

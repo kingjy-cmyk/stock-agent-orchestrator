@@ -32,6 +32,11 @@ from stock_agent_orchestrator.services.beta_live_config import (
     beta_live_config_init_to_markdown,
     init_beta_live_config,
 )
+from stock_agent_orchestrator.services.beta_live_config_status import (
+    beta_live_config_status_to_dict,
+    beta_live_config_status_to_markdown,
+    inspect_beta_live_config,
+)
 from stock_agent_orchestrator.services.beta_live_preflight import (
     preflight_report_to_dict,
     preflight_report_to_markdown,
@@ -140,6 +145,11 @@ def build_parser() -> argparse.ArgumentParser:
     init_beta_live_config_cmd.add_argument("--output", default="configs/beta.live.toml")
     init_beta_live_config_cmd.add_argument("--force", action="store_true")
     init_beta_live_config_cmd.add_argument("--format", choices=["json", "markdown"], default="markdown")
+
+    beta_live_config_status = sub.add_parser("beta-live-config-status")
+    beta_live_config_status.add_argument("--repo-root", default=".")
+    beta_live_config_status.add_argument("--config", default="configs/beta.live.toml")
+    beta_live_config_status.add_argument("--format", choices=["json", "markdown"], default="markdown")
 
     app_readiness = sub.add_parser("application-readiness")
     app_readiness.add_argument("--repo-root", default=".")
@@ -416,6 +426,18 @@ def main() -> None:
             else json.dumps(beta_live_config_init_to_dict(result), ensure_ascii=False, indent=2)
         )
         print(rendered)
+        return
+
+    if args.command == "beta-live-config-status":
+        status = inspect_beta_live_config(config_path=Path(args.config), repo_root=Path(args.repo_root))
+        rendered = (
+            beta_live_config_status_to_markdown(status)
+            if args.format == "markdown"
+            else json.dumps(beta_live_config_status_to_dict(status), ensure_ascii=False, indent=2)
+        )
+        print(rendered)
+        if not status.ok:
+            raise SystemExit(1)
         return
 
     if args.command == "application-readiness":

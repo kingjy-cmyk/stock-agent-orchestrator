@@ -11,7 +11,7 @@
 先从示例复制一份真实配置文件：
 
 ```bash
-copy configs\beta.live.example.toml configs\beta.live.toml
+stock-agent-orchestrator init-beta-live-config --output configs/beta.live.toml
 ```
 
 填入真实值：
@@ -29,6 +29,12 @@ copy configs\beta.live.example.toml configs\beta.live.toml
 - `paths.candidate_list`
 - `paths.seven_layer_reports`
 - `paths.entry_monitor_reports`
+
+检查配置状态：
+
+```bash
+stock-agent-orchestrator beta-live-config-status --config configs/beta.live.toml --format markdown
+```
 
 然后运行：
 

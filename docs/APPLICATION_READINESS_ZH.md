@@ -43,18 +43,23 @@ stock-agent-orchestrator application-readiness --format markdown
 ## 冲到 90+ 的最短路径
 
 1. 运行 `init-beta-live-config` 生成本地 `configs/beta.live.toml`，再填入真实值。
-2. 运行 `beta-validation-guide`，确认是否允许进入真实 beta。
-3. 运行 `beta-live-runbook`，生成真实 beta 群操作手册和停止条件。
-4. 启动 `run-webhook --allow-live-send`。
-5. 运行 `beta-callback-probe`，确认公网 `/healthz` 和 `/webhook` challenge 可用。
-6. 在 beta 群发送 `@小C-beta 今天先给我一份候选池`。
-7. 运行 `collect-beta-evidence`，自动保存 `/healthz` 到 `.runtime/healthz.json` 并生成 `docs/BETA_VALIDATION_REPORT_ZH.md`。
-8. 补任务卡截图或录屏路径。
+2. 运行 `beta-live-config-status`，确认配置存在、已被 `.gitignore` 保护、必要字段已填。
+3. 运行 `beta-validation-guide`，确认是否允许进入真实 beta。
+4. 运行 `beta-live-runbook`，生成真实 beta 群操作手册和停止条件。
+5. 启动 `run-webhook --allow-live-send`。
+6. 运行 `beta-callback-probe`，确认公网 `/healthz` 和 `/webhook` challenge 可用。
+7. 在 beta 群发送 `@小C-beta 今天先给我一份候选池`。
+8. 运行 `collect-beta-evidence`，自动保存 `/healthz` 到 `.runtime/healthz.json` 并生成 `docs/BETA_VALIDATION_REPORT_ZH.md`。
+9. 补任务卡截图或录屏路径。
 
 推荐先运行：
 
 ```bash
 stock-agent-orchestrator init-beta-live-config --output configs/beta.live.toml
+```
+
+```bash
+stock-agent-orchestrator beta-live-config-status --config configs/beta.live.toml --format markdown
 ```
 
 ```bash

@@ -25,7 +25,7 @@ def init_beta_live_config(*, template_path: Path, output_path: Path, force: bool
             force=force,
             next_steps=[
                 "Review the existing config instead of overwriting it.",
-                f"Run: stock-agent-orchestrator validate-config --config {output_path}",
+                f"Run: stock-agent-orchestrator beta-live-config-status --config {output_path} --format markdown",
             ],
             warnings=[
                 "Output config already exists; no changes were made.",
@@ -42,7 +42,7 @@ def init_beta_live_config(*, template_path: Path, output_path: Path, force: bool
         force=force,
         next_steps=[
             "Replace all placeholder values in the generated config.",
-            f"Run: stock-agent-orchestrator validate-config --config {output_path}",
+            f"Run: stock-agent-orchestrator beta-live-config-status --config {output_path} --format markdown",
             f"Run: stock-agent-orchestrator beta-validation-guide --config {output_path} --callback-url https://your-public-domain.example --format markdown",
         ],
         warnings=[

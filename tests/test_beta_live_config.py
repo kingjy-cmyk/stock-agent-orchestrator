@@ -21,6 +21,7 @@ class BetaLiveConfigTests(unittest.TestCase):
             self.assertTrue(result.created)
             self.assertEqual(output.read_text(encoding="utf-8"), "app = \"replace-me\"\n")
             self.assertTrue(any("Do not commit" in warning for warning in result.warnings))
+            self.assertTrue(any("beta-live-config-status" in step for step in result.next_steps))
 
     def test_init_beta_live_config_does_not_overwrite_existing_file_without_force(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -34,6 +35,7 @@ class BetaLiveConfigTests(unittest.TestCase):
 
             self.assertFalse(result.created)
             self.assertEqual(output.read_text(encoding="utf-8"), "existing\n")
+            self.assertTrue(any("beta-live-config-status" in step for step in result.next_steps))
 
     def test_init_beta_live_config_force_overwrites_existing_file(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
