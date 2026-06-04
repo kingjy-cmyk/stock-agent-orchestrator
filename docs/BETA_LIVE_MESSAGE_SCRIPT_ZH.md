@@ -30,14 +30,22 @@ stock-agent-orchestrator beta-live-readiness-bundle --config configs/beta.live.t
 stock-agent-orchestrator beta-callback-deploy-plan --callback-url https://your-public-domain.example --format markdown
 ```
 
-```bash
-stock-agent-orchestrator beta-callback-probe --config configs/beta.live.toml --callback-url https://your-public-domain.example --format markdown
-```
-
 再生成消息脚本：
 
 ```bash
 stock-agent-orchestrator beta-live-message-script --task-id BETA-0001 --format markdown
+```
+
+发送任何真实 beta 群消息前，先运行最终准入门：
+
+```bash
+stock-agent-orchestrator beta-live-final-gate --config configs/beta.live.toml --callback-url https://your-public-domain.example --format markdown
+```
+
+最终准入门通过后，再启动 webhook 并探测 callback：
+
+```bash
+stock-agent-orchestrator beta-callback-probe --config configs/beta.live.toml --callback-url https://your-public-domain.example --format markdown
 ```
 
 ## 首轮消息

@@ -33,6 +33,7 @@
 - [飞书 Beta 配置安全审阅](docs/BETA_LIVE_CONFIG_REVIEW_ZH.md)
 - [飞书 Beta Callback 部署预案](docs/BETA_CALLBACK_DEPLOY_PLAN_ZH.md)
 - [飞书 Beta 首轮消息脚本](docs/BETA_LIVE_MESSAGE_SCRIPT_ZH.md)
+- [飞书 Beta 最终准入门](docs/BETA_LIVE_FINAL_GATE_ZH.md)
 - [Beta Live 环境变量配置](docs/BETA_LIVE_ENV_ZH.md)
 - [飞书 Beta 验证报告模板](docs/BETA_VALIDATION_REPORT_TEMPLATE_ZH.md)
 - [中文产品介绍](docs/INTRO_ZH.md)
@@ -68,7 +69,7 @@ Current status:
 
 - local install/demo/smoke paths are documented
 - Feishu connector has a safe beta preflight gate
-- 120 unit tests pass locally
+- 123 unit tests pass locally
 - real Feishu beta validation is still pending
 
 Current readiness can be checked by command:
@@ -91,6 +92,7 @@ For the application narrative and demo checklist, see:
 - [飞书 Beta 配置安全审阅](docs/BETA_LIVE_CONFIG_REVIEW_ZH.md)
 - [飞书 Beta Callback 部署预案](docs/BETA_CALLBACK_DEPLOY_PLAN_ZH.md)
 - [飞书 Beta 首轮消息脚本](docs/BETA_LIVE_MESSAGE_SCRIPT_ZH.md)
+- [飞书 Beta 最终准入门](docs/BETA_LIVE_FINAL_GATE_ZH.md)
 - [飞书 Beta 验证报告模板](docs/BETA_VALIDATION_REPORT_TEMPLATE_ZH.md)
 
 ## Product Shape
@@ -329,6 +331,12 @@ Generate the beta group message script before sending real beta messages:
 stock-agent-orchestrator beta-live-message-script --task-id BETA-0001 --format markdown
 ```
 
+Run the final go/no-go gate before starting live send or touching the beta group:
+
+```bash
+stock-agent-orchestrator beta-live-final-gate --config configs/beta.live.toml --callback-url https://your-public-domain.example --format markdown
+```
+
 Rehearse evidence collection locally. This writes ignored rehearsal artifacts only and does not prove real Feishu beta success:
 
 ```bash
@@ -370,6 +378,7 @@ Supported sample formats:
 - 飞书 Beta 配置安全审阅: [docs/BETA_LIVE_CONFIG_REVIEW_ZH.md](docs/BETA_LIVE_CONFIG_REVIEW_ZH.md)
 - 飞书 Beta Callback 部署预案: [docs/BETA_CALLBACK_DEPLOY_PLAN_ZH.md](docs/BETA_CALLBACK_DEPLOY_PLAN_ZH.md)
 - 飞书 Beta 首轮消息脚本: [docs/BETA_LIVE_MESSAGE_SCRIPT_ZH.md](docs/BETA_LIVE_MESSAGE_SCRIPT_ZH.md)
+- 飞书 Beta 最终准入门: [docs/BETA_LIVE_FINAL_GATE_ZH.md](docs/BETA_LIVE_FINAL_GATE_ZH.md)
 - Beta Live 环境变量配置: [docs/BETA_LIVE_ENV_ZH.md](docs/BETA_LIVE_ENV_ZH.md)
 - 飞书优先原则: [docs/FEISHU_FIRST_ZH.md](docs/FEISHU_FIRST_ZH.md)
 - 飞书连接器架构: [docs/FEISHU_CONNECTOR_ZH.md](docs/FEISHU_CONNECTOR_ZH.md)

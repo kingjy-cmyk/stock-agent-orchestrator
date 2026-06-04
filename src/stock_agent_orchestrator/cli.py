@@ -58,6 +58,11 @@ from stock_agent_orchestrator.services.beta_live_evidence_rehearsal import (
     beta_live_evidence_rehearsal_to_markdown,
     run_beta_live_evidence_rehearsal,
 )
+from stock_agent_orchestrator.services.beta_live_final_gate import (
+    beta_live_final_gate_to_dict,
+    beta_live_final_gate_to_markdown,
+    build_beta_live_final_gate,
+)
 from stock_agent_orchestrator.services.beta_live_intake_checklist import (
     beta_live_intake_checklist_to_dict,
     beta_live_intake_checklist_to_markdown,
@@ -262,6 +267,19 @@ def build_parser() -> argparse.ArgumentParser:
     beta_live_message_script = sub.add_parser("beta-live-message-script")
     beta_live_message_script.add_argument("--task-id", default="BETA-0001")
     beta_live_message_script.add_argument("--format", choices=["json", "markdown"], default="markdown")
+
+    beta_live_final_gate = sub.add_parser("beta-live-final-gate")
+    beta_live_final_gate.add_argument("--repo-root", default=".")
+    beta_live_final_gate.add_argument("--config", default="configs/beta.live.toml")
+    beta_live_final_gate.add_argument("--callback-url", required=True)
+    beta_live_final_gate.add_argument("--db", default=".runtime/webhook.db")
+    beta_live_final_gate.add_argument("--healthz-json", default=".runtime/healthz.json")
+    beta_live_final_gate.add_argument("--report-output", default="docs/BETA_VALIDATION_REPORT_ZH.md")
+    beta_live_final_gate.add_argument("--host", default="127.0.0.1")
+    beta_live_final_gate.add_argument("--port", type=int, default=8787)
+    beta_live_final_gate.add_argument("--task-id", default="BETA-0001")
+    beta_live_final_gate.add_argument("--shell", choices=["powershell", "bash"], default="powershell")
+    beta_live_final_gate.add_argument("--format", choices=["json", "markdown"], default="markdown")
 
     beta_live_intake_checklist = sub.add_parser("beta-live-intake-checklist")
     beta_live_intake_checklist.add_argument("--shell", choices=["powershell", "bash"], default="powershell")
@@ -700,6 +718,29 @@ def main() -> None:
             else json.dumps(beta_live_message_script_to_dict(script), ensure_ascii=False, indent=2)
         )
         print(rendered)
+        return
+
+    if args.command == "beta-live-final-gate":
+        gate = build_beta_live_final_gate(
+            repo_root=Path(args.repo_root),
+            config_path=Path(args.config),
+            callback_url=args.callback_url,
+            db_path=args.db,
+            healthz_json_path=args.healthz_json,
+            report_path=args.report_output,
+            host=args.host,
+            port=args.port,
+            task_id=args.task_id,
+            shell=args.shell,
+        )
+        rendered = (
+            beta_live_final_gate_to_markdown(gate)
+            if args.format == "markdown"
+            else json.dumps(beta_live_final_gate_to_dict(gate), ensure_ascii=False, indent=2)
+        )
+        print(rendered)
+        if not gate.ok:
+            raise SystemExit(1)
         return
 
     if args.command == "beta-live-intake-checklist":

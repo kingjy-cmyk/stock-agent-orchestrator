@@ -54,11 +54,12 @@ stock-agent-orchestrator application-readiness --format markdown
 10. 运行 `beta-callback-deploy-plan`，确认公网 callback、飞书事件订阅 URL、本地监听和探测命令一致。
 11. 运行 `beta-live-evidence-rehearsal`，彩排证据收集和报告生成链路。
 12. 运行 `beta-live-message-script`，确认真实 beta 群首轮消息、截图点和失败判据。
-13. 启动 `run-webhook --allow-live-send`。
-14. 运行 `beta-callback-probe`，确认公网 `/healthz` 和 `/webhook` challenge 可用。
-15. 在 beta 群按 message script 发送首轮消息。
-16. 运行 `collect-beta-evidence`，自动保存 `/healthz` 到 `.runtime/healthz.json` 并生成 `docs/BETA_VALIDATION_REPORT_ZH.md`。
-17. 补任务卡截图或录屏路径。
+13. 运行 `beta-live-final-gate`，确认最终 stage 为 `ready_to_execute_real_beta_validation`。
+14. 启动 `run-webhook --allow-live-send`。
+15. 运行 `beta-callback-probe`，确认公网 `/healthz` 和 `/webhook` challenge 可用。
+16. 在 beta 群按 message script 发送首轮消息。
+17. 运行 `collect-beta-evidence`，自动保存 `/healthz` 到 `.runtime/healthz.json` 并生成 `docs/BETA_VALIDATION_REPORT_ZH.md`。
+18. 补任务卡截图或录屏路径。
 
 推荐先运行：
 
@@ -108,6 +109,10 @@ stock-agent-orchestrator beta-callback-deploy-plan --callback-url https://your-p
 
 ```bash
 stock-agent-orchestrator beta-live-message-script --task-id BETA-0001 --format markdown
+```
+
+```bash
+stock-agent-orchestrator beta-live-final-gate --config configs/beta.live.toml --callback-url https://your-public-domain.example --format markdown
 ```
 
 ```bash

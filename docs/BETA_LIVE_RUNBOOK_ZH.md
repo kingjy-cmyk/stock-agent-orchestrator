@@ -30,19 +30,21 @@ stock-agent-orchestrator beta-live-runbook --config configs/beta.live.toml --cal
 6. 运行 `beta-live-launch-packet`，生成飞书开放平台填写项、首轮测试消息和证据清单。
 7. 运行 `beta-callback-deploy-plan`，确认公网 callback、飞书事件订阅 URL、本地监听和探测命令一致。
 8. 运行 `beta-live-message-script`，确认首轮消息、截图点和失败判据。
-9. 如果 runbook、launch packet、deploy plan 和 message script 都允许开始，再启动 `run-webhook --allow-live-send`。
-10. 运行 `beta-callback-probe`。
-11. 在飞书开放平台配置事件订阅 webhook URL。
-12. 在 beta 群按 message script 发送首轮消息。
-13. 确认任务卡出现并可被后续消息原地更新。
-14. 运行 `collect-beta-evidence` 生成验证报告。
-15. 运行 `application-readiness`。
+9. 运行 `beta-live-final-gate`，确认最终 stage 为 `ready_to_execute_real_beta_validation`。
+10. 如果 final gate 允许开始，再启动 `run-webhook --allow-live-send`。
+11. 运行 `beta-callback-probe`。
+12. 在飞书开放平台配置事件订阅 webhook URL。
+13. 在 beta 群按 message script 发送首轮消息。
+14. 确认任务卡出现并可被后续消息原地更新。
+15. 运行 `collect-beta-evidence` 生成验证报告。
+16. 运行 `application-readiness`。
 
 ## 必须停止的情况
 
 - `beta-live-runbook` 显示 `ready_to_start: false`。
 - `beta-callback-deploy-plan` 显示 `ok: false`。
 - `beta-live-message-script` 中任一前置命令失败。
+- `beta-live-final-gate` 显示 `ok: false`。
 - `beta-callback-probe` 失败。
 - beta 群没有出现任务卡。
 - `collect-beta-evidence` 报告里 `task_card_message_id` 缺失。
