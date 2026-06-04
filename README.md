@@ -64,7 +64,7 @@ The first version in this repository focuses on:
 1. 任务状态机：`NEW -> PLANNED -> SCANNING -> ENRICHING -> ANALYZING -> FOLLOWING_UP -> RECORDED -> CLOSED`
 2. 审批边界：已知规则内可自动推进；新规则或越界事项进入 `WAITING_USER`
 3. 现有体系桥接：可以读取当前 `candidate_list.md` 和七层研究报告
-4. CLI：支持建库、建任务、推进任务、恢复任务、查看任务、候选池导入、规则建议生成
+4. CLI：支持建库、建任务、推进任务、恢复任务、查看任务、候选池导入、离线影子回放、规则建议生成
 5. 测试：当前核心单元测试已通过
 
 下一阶段不是“重做三个人”，而是：
@@ -123,6 +123,17 @@ Preview the current candidate pool from the existing OpenClaw markdown output:
 stock-agent-orchestrator ingest-candidates --candidate-file /path/to/candidate_list.md
 ```
 
+Replay offline Feishu-style message samples without touching the production group:
+
+```bash
+stock-agent-orchestrator shadow-replay --input /path/to/messages.jsonl --format markdown --report .runtime/shadow-report.md
+```
+
+Supported sample formats:
+
+- `.jsonl`: one JSON object per line with `sender_name`, `text`, optional `created_at`, optional `mentions_owner`
+- plain text: one message per line, preferably `sender: message`
+
 ## Rollout Plan
 
 1. shadow mode against the current production Feishu group
@@ -137,3 +148,4 @@ stock-agent-orchestrator ingest-candidates --candidate-file /path/to/candidate_l
 - 中文全流程: [docs/WORKFLOW_ZH.md](docs/WORKFLOW_ZH.md)
 - 中文维护/审批: [docs/MAINTENANCE_ZH.md](docs/MAINTENANCE_ZH.md)
 - 中文路线图: [docs/ROADMAP_ZH.md](docs/ROADMAP_ZH.md)
+- 中文 Shadow Mode 说明: [docs/SHADOW_MODE_ZH.md](docs/SHADOW_MODE_ZH.md)

@@ -9,6 +9,7 @@ from stock_agent_orchestrator.bridges.current_stack import CurrentStackBridge
 from stock_agent_orchestrator.domain.models import AgentRole, TaskIntent
 from stock_agent_orchestrator.persistence.sqlite_store import SQLiteTaskStore
 from stock_agent_orchestrator.services.rule_memory import RuleMemoryService
+from stock_agent_orchestrator.services.shadow_replay import ShadowReplayService, report_to_dict, report_to_markdown
 from stock_agent_orchestrator.services.task_engine import TaskEngine
 
 
@@ -55,6 +56,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     parse_report = sub.add_parser("parse-seven-layer")
     parse_report.add_argument("--report-file", required=True)
+
+    shadow = sub.add_parser("shadow-replay")
+    shadow.add_argument("--db", default=str(DEFAULT_DB))
+    shadow.add_argument("--input", required=True)
+    shadow.add_argument("--report", default="")
+    shadow.add_argument("--format", choices=["json", "markdown"], default="json")
 
     return parser
 
@@ -165,6 +172,20 @@ def main() -> None:
         bridge = CurrentStackBridge()
         cards = bridge.parse_seven_layer_report(Path(args.report_file))
         print(json.dumps([asdict(card) for card in cards], ensure_ascii=False, indent=2))
+        return
+
+    if args.command == "shadow-replay":
+        store = SQLiteTaskStore(Path(args.db))
+        report = ShadowReplayService().replay_file(Path(args.input), store)
+        rendered = (
+            report_to_markdown(report)
+            if args.format == "markdown"
+            else json.dumps(report_to_dict(report), ensure_ascii=False, indent=2)
+        )
+        if args.report:
+            Path(args.report).parent.mkdir(parents=True, exist_ok=True)
+            Path(args.report).write_text(rendered, encoding="utf-8")
+        print(rendered)
         return
 
 

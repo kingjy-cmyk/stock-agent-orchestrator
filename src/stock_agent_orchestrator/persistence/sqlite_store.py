@@ -140,6 +140,15 @@ class SQLiteTaskStore:
             )
         return task
 
+    def list_tasks(self) -> list[Task]:
+        conn = sqlite3.connect(self.db_path)
+        try:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute("select task_id from tasks order by created_at asc, task_id asc").fetchall()
+        finally:
+            conn.close()
+        return [task for row in rows if (task := self.load_task(row["task_id"])) is not None]
+
     @staticmethod
     def _event_to_dict(event: TaskEvent) -> dict:
         payload = asdict(event)
