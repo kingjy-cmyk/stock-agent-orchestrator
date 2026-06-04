@@ -1,0 +1,126 @@
+from __future__ import annotations
+
+import json
+from dataclasses import asdict
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+from typing import Any
+
+from stock_agent_orchestrator.config import OrchestratorConfig, load_config
+from stock_agent_orchestrator.connectors.feishu import FakeFeishuClient, FeishuClient
+from stock_agent_orchestrator.connectors.feishu_webhook import FeishuWebhookGateway, WebhookResult
+from stock_agent_orchestrator.persistence.sqlite_store import SQLiteTaskStore
+from stock_agent_orchestrator.services.beta_orchestrator import BetaOrchestratorService
+from stock_agent_orchestrator.services.connector_worker import ConnectorWorker
+from stock_agent_orchestrator.services.ingress import BoundedIngressQueue
+
+
+class FeishuWebhookHTTPHandler(BaseHTTPRequestHandler):
+    gateway: FeishuWebhookGateway
+    drain: bool = True
+
+    def do_GET(self) -> None:
+        if self.path != "/healthz":
+            self._write_json(404, {"ok": False, "error": "not_found"})
+            return
+        self._write_json(200, {"ok": True})
+
+    def do_POST(self) -> None:
+        if self.path != "/webhook":
+            self._write_json(404, {"ok": False, "error": "not_found"})
+            return
+        try:
+            payload = self._read_json()
+        except ValueError as exc:
+            self._write_json(400, {"ok": False, "error": str(exc)})
+            return
+
+        result = self.gateway.handle_payload(payload, drain=self.drain)
+        if result.challenge:
+            self._write_json(200, {"challenge": result.challenge})
+            return
+        if not result.accepted:
+            self._write_json(202, webhook_result_to_dict(result))
+            return
+        self._write_json(200, webhook_result_to_dict(result))
+
+    def log_message(self, format: str, *args: Any) -> None:
+        return
+
+    def _read_json(self) -> dict[str, Any]:
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+        except ValueError as exc:
+            raise ValueError("invalid content length") from exc
+        raw = self.rfile.read(length)
+        if not raw:
+            return {}
+        try:
+            payload = json.loads(raw.decode("utf-8"))
+        except json.JSONDecodeError as exc:
+            raise ValueError("invalid json") from exc
+        if not isinstance(payload, dict):
+            raise ValueError("json body must be an object")
+        return payload
+
+    def _write_json(self, status: int, payload: dict[str, Any]) -> None:
+        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+
+def build_webhook_server(
+    *,
+    host: str,
+    port: int,
+    config: OrchestratorConfig,
+    db_path: Path,
+    feishu_client: FeishuClient | None = None,
+    max_per_instance: int = 1024,
+) -> ThreadingHTTPServer:
+    client = feishu_client or FakeFeishuClient()
+    worker = ConnectorWorker(
+        queue=BoundedIngressQueue(max_per_instance=max_per_instance),
+        orchestrator=BetaOrchestratorService(
+            config=config,
+            store=SQLiteTaskStore(db_path),
+            feishu_client=client,
+        ),
+    )
+    gateway = FeishuWebhookGateway(worker=worker)
+
+    class Handler(FeishuWebhookHTTPHandler):
+        pass
+
+    Handler.gateway = gateway
+    return ThreadingHTTPServer((host, port), Handler)
+
+
+def build_webhook_server_from_config(
+    *,
+    host: str,
+    port: int,
+    config_path: Path,
+    db_path: Path,
+    max_per_instance: int = 1024,
+) -> ThreadingHTTPServer:
+    return build_webhook_server(
+        host=host,
+        port=port,
+        config=load_config(config_path),
+        db_path=db_path,
+        max_per_instance=max_per_instance,
+    )
+
+
+def webhook_result_to_dict(result: WebhookResult) -> dict[str, Any]:
+    return {
+        "accepted": result.accepted,
+        "enqueued": result.enqueued,
+        "challenge": result.challenge,
+        "reason": result.reason,
+        "worker_report": asdict(result.worker_report) if result.worker_report else None,
+    }

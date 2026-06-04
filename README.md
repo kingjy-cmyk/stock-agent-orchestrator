@@ -205,6 +205,12 @@ Run the local Feishu webhook gateway smoke test:
 stock-agent-orchestrator webhook-smoke --config configs/beta.example.toml
 ```
 
+Run the local webhook HTTP service. This still uses `FakeFeishuClient` and will not send to a real Feishu group:
+
+```bash
+stock-agent-orchestrator run-webhook --config configs/beta.example.toml --host 127.0.0.1 --port 8787
+```
+
 Supported sample formats:
 
 - `.jsonl`: one JSON object per line with `sender_name`, `text`, optional `created_at`, optional `mentions_owner`

@@ -8,6 +8,7 @@ from pathlib import Path
 from stock_agent_orchestrator.bridges.current_stack import CurrentStackBridge
 from stock_agent_orchestrator.config import config_to_dict, load_config, validate_config, validation_to_dict
 from stock_agent_orchestrator.connectors.feishu import FakeFeishuClient, FeishuMessageEvent
+from stock_agent_orchestrator.connectors.feishu_http import build_webhook_server_from_config
 from stock_agent_orchestrator.connectors.feishu_webhook import FeishuWebhookGateway
 from stock_agent_orchestrator.domain.models import AgentRole, TaskIntent
 from stock_agent_orchestrator.persistence.sqlite_store import SQLiteTaskStore
@@ -112,6 +113,13 @@ def build_parser() -> argparse.ArgumentParser:
     webhook_smoke.add_argument("--config", default="configs/beta.example.toml")
     webhook_smoke.add_argument("--db", default=".runtime/webhook-smoke.db")
     webhook_smoke.add_argument("--text", default="@小C-beta 今天先给我一份候选池")
+
+    run_webhook = sub.add_parser("run-webhook")
+    run_webhook.add_argument("--config", default="configs/beta.example.toml")
+    run_webhook.add_argument("--db", default=".runtime/webhook.db")
+    run_webhook.add_argument("--host", default="127.0.0.1")
+    run_webhook.add_argument("--port", type=int, default=8787)
+    run_webhook.add_argument("--max-per-instance", type=int, default=1024)
 
     return parser
 
@@ -434,6 +442,30 @@ def main() -> None:
                 for sent in client.sent_messages
             ],
         }, ensure_ascii=False, indent=2))
+        return
+
+    if args.command == "run-webhook":
+        server = build_webhook_server_from_config(
+            host=args.host,
+            port=args.port,
+            config_path=Path(args.config),
+            db_path=Path(args.db),
+            max_per_instance=args.max_per_instance,
+        )
+        print(json.dumps({
+            "ok": True,
+            "mode": "fake-send",
+            "listen": f"http://{args.host}:{server.server_address[1]}",
+            "webhook": f"http://{args.host}:{server.server_address[1]}/webhook",
+            "healthz": f"http://{args.host}:{server.server_address[1]}/healthz",
+            "note": "Uses FakeFeishuClient; does not send to a real Feishu group yet.",
+        }, ensure_ascii=False, indent=2))
+        try:
+            server.serve_forever()
+        except KeyboardInterrupt:
+            pass
+        finally:
+            server.server_close()
         return
 
 

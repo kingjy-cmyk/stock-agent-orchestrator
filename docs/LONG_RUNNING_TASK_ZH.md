@@ -54,8 +54,18 @@
 
 本阶段先分两步：
 
-- Stage 2A：本地 webhook gateway 骨架，支持 challenge 和消息 payload 入队。
+- Stage 2A：本地 webhook gateway 骨架，支持 challenge、HTTP service 和消息 payload 入队。
 - Stage 2B：填入真实 beta 群凭证和公网回调地址后，接真实 beta 群。
+
+Stage 2A 已实现：
+
+- `FeishuWebhookGateway`
+- `run-webhook`
+- `/healthz`
+- `/webhook`
+- challenge 响应
+- Feishu 风格消息 payload 入队
+- fake send 任务卡
 
 ### Stage 3：Task Card Update
 

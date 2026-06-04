@@ -42,10 +42,24 @@ Feishu Gateway
 - `FeishuClient`：发送接口。
 - `FakeFeishuClient`：测试用发送器。
 - `FeishuWebhookGateway`：本地 event callback gateway 骨架。
+- `run-webhook`：本地 HTTP webhook service。
 - `BetaOrchestratorService`：处理 beta 群消息并生成任务卡。
 - `BoundedIngressQueue`：按实例隔离的有界入口队列。
 - `beta-smoke`：不触达真实飞书的 smoke test。
 - `webhook-smoke`：验证 challenge 和 Feishu 风格消息 payload。
+
+## 本地 HTTP 服务
+
+```bash
+stock-agent-orchestrator run-webhook --config configs/beta.example.toml --host 127.0.0.1 --port 8787
+```
+
+端点：
+
+- `GET /healthz`
+- `POST /webhook`
+
+当前仍使用 `FakeFeishuClient`，不会向真实飞书群发送消息。
 
 ## 下一步真实接入
 
