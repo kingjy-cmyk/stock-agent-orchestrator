@@ -120,6 +120,28 @@ Stage 2B 剩余：
 - 状态从 planned 进入 scanning/enriching/analyzing/following_up。
 - 任务卡能展示当前责任人变化。
 
+### Stage A：Application Materials
+
+状态：`进行中`
+
+目标：
+
+- 让仓库具备申请 Codex 官方活动的评审材料。
+- 明确项目一句话、解决的问题、Codex 在项目中的作用。
+- 提供本地演示脚本和真实 beta 验证报告模板。
+
+已实现：
+
+- [申请材料草案](APPLICATION_ZH.md)
+- [演示脚本](DEMO_SCRIPT_ZH.md)
+- [飞书 Beta 验证报告模板](BETA_VALIDATION_REPORT_TEMPLATE_ZH.md)
+
+仍缺：
+
+- 真实 beta 群截图或 GIF。
+- `BETA_VALIDATION_REPORT_ZH.md` 实际验证报告。
+- README 顶部效果图。
+
 ### Stage 4：Daily Candidate Chain
 
 状态：`待开始`

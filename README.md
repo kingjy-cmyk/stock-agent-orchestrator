@@ -21,6 +21,9 @@
 
 中文文档入口：
 
+- [申请材料草案](docs/APPLICATION_ZH.md)
+- [演示脚本](docs/DEMO_SCRIPT_ZH.md)
+- [飞书 Beta 验证报告模板](docs/BETA_VALIDATION_REPORT_TEMPLATE_ZH.md)
 - [中文产品介绍](docs/INTRO_ZH.md)
 - [飞书优先原则](docs/FEISHU_FIRST_ZH.md)
 - [飞书连接器架构](docs/FEISHU_CONNECTOR_ZH.md)
@@ -45,6 +48,23 @@ That means:
 - missing evidence is visible
 - known rules can auto-advance
 - unknown rules stop at explicit user review
+
+## Application Readiness
+
+This repository is being prepared as an open-source Codex-built project.
+
+Current status:
+
+- local install/demo/smoke paths are documented
+- Feishu connector has a safe beta preflight gate
+- 40 unit tests pass locally
+- real Feishu beta validation is still pending
+
+For the application narrative and demo checklist, see:
+
+- [申请材料草案](docs/APPLICATION_ZH.md)
+- [演示脚本](docs/DEMO_SCRIPT_ZH.md)
+- [飞书 Beta 验证报告模板](docs/BETA_VALIDATION_REPORT_TEMPLATE_ZH.md)
 
 ## Product Shape
 
@@ -243,6 +263,9 @@ Supported sample formats:
 
 - English architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - English rollout: [docs/ROLLOUT.md](docs/ROLLOUT.md)
+- 申请材料草案: [docs/APPLICATION_ZH.md](docs/APPLICATION_ZH.md)
+- 演示脚本: [docs/DEMO_SCRIPT_ZH.md](docs/DEMO_SCRIPT_ZH.md)
+- 飞书 Beta 验证报告模板: [docs/BETA_VALIDATION_REPORT_TEMPLATE_ZH.md](docs/BETA_VALIDATION_REPORT_TEMPLATE_ZH.md)
 - 飞书优先原则: [docs/FEISHU_FIRST_ZH.md](docs/FEISHU_FIRST_ZH.md)
 - 飞书连接器架构: [docs/FEISHU_CONNECTOR_ZH.md](docs/FEISHU_CONNECTOR_ZH.md)
 - 飞书 Beta Live Preflight: [docs/BETA_LIVE_PREFLIGHT_ZH.md](docs/BETA_LIVE_PREFLIGHT_ZH.md)

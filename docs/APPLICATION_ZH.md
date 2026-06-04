@@ -1,0 +1,96 @@
+# Codex 官方活动申请材料草案
+
+## 项目一句话
+
+`stock-agent-orchestrator` 是一个以飞书群为透明控制面的多 agent 股票研究编排系统，用任务 owner、状态机和安全接入层，把一次性聊天委托变成可追踪、可复盘、可审批的研究闭环。
+
+## 解决的问题
+
+普通 agent demo 往往停在一轮对话：
+
+- 用户说完需求后，后续是否推进不可见。
+- 多个 agent 之间职责不清。
+- 缺证据、缺审批、缺复盘。
+- 任务做着做着没有下文。
+
+本项目把核心约束改成：
+
+```text
+委托必须持续推进，直到关闭，或者明确等待用户审批。
+```
+
+## 为什么适合 Codex
+
+这个项目不是单纯用 Codex 写一个脚本，而是把 Codex 作为长期工程推进者：
+
+- 拆阶段推进仓库能力。
+- 参考现有 Codex 飞书通道连接器，对标 Gateway / Operation / Ingress / Worker 模式。
+- 把用户的真实协作需求转成代码、配置、测试和文档。
+- 每个阶段提交到 GitHub，并保留验证命令。
+
+## 当前已完成
+
+- 原创开源仓库，MIT License。
+- Python CLI 工具和可安装包。
+- 任务状态机：`小C / 小智 / 小巴` 三角色。
+- 飞书风格消息解析。
+- Shadow replay 离线回放。
+- Fake Feishu beta smoke。
+- Local webhook HTTP service。
+- Live Feishu client 安全骨架。
+- Gateway / Operation / Ingress Queue / Worker 分层。
+- `send_allowlist`、`verification_token`、去重、状态健康检查、operation error 记录。
+- `beta-live-preflight` 真实 beta 前准入检查。
+- 中文说明、安装、维护、路线图、飞书连接器文档。
+- 单元测试 40 项通过。
+
+## 当前边界
+
+还没有完成真实飞书 beta 群验证。
+
+当前仓库可以证明：
+
+- 本地安装可用。
+- CLI 可运行。
+- fake 飞书链路能从委托生成任务卡。
+- webhook 可接收飞书风格 payload。
+- live 配置有安全准入门。
+
+当前还不能证明：
+
+- 真实飞书 beta 群中能稳定出现任务卡。
+- 小智-beta / 小巴-beta 回复能更新同一任务卡。
+- interactive card update 已完成。
+
+## 申请前建议补齐
+
+优先级最高：
+
+- 真实 beta 群跑通 `@小C-beta -> BETA-0001 任务卡`。
+- 补一张 beta 群截图或一段 GIF。
+- 补一份 `BETA_VALIDATION_REPORT_ZH.md`，记录日期、配置、步骤、结果、截图。
+
+优先级次高：
+
+- Stage 3：同一任务的后续状态更新。
+- interactive card update 或至少追加回执。
+- 简短英文版项目摘要。
+
+## 可展示命令
+
+```bash
+python -m pip install -e .
+stock-agent-orchestrator doctor
+stock-agent-orchestrator demo
+stock-agent-orchestrator beta-smoke --config configs/beta.example.toml
+stock-agent-orchestrator webhook-smoke --config configs/beta.example.toml
+stock-agent-orchestrator beta-live-preflight --config configs/beta.live.toml --callback-url https://your-public-domain.example
+```
+
+## 申请表述草案
+
+我用 Codex 构建了一个开源的多 agent 股票研究编排系统。它以飞书群作为透明控制面，把用户对“小C”的委托拆成可追踪任务，并让“小智 / 小巴”的数据、分析、复盘动作进入同一闭环。项目重点不是预测股票，而是解决多 agent 协作里最常见的“没有下文、责任不清、证据不可见、规则无法沉淀”的问题。
+
+Codex 在这个项目中承担了长期工程 owner 的角色：从需求澄清、架构拆分、连接器对标、配置安全、测试覆盖，到 GitHub 仓库维护和申请材料沉淀，都是按阶段推进并提交的。
+
+当前版本已实现本地可运行 CLI、飞书 webhook MVP、安全 preflight、任务状态机、fake beta 验证和完整中文文档。下一步会进入真实飞书 beta 群验证。
