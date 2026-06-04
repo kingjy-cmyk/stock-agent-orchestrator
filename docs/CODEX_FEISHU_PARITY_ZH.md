@@ -63,4 +63,4 @@ Stage 3 前必须补：
 
 - card action payload
 - update_card
-- 任务卡 message_id 绑定到 task context
+- 任务卡 message_id 绑定到 task context（已完成 MVP，后续用于 `update_card`）

@@ -34,7 +34,11 @@ class BetaOrchestratorTests(unittest.TestCase):
             self.assertEqual(len(client.sent_messages), 1)
             self.assertIn("任务卡：BETA-0001", client.sent_messages[0].text)
             self.assertIn("当前责任人：小C", client.sent_messages[0].text)
-            self.assertIsNotNone(store.load_task("BETA-0001"))
+            task = store.load_task("BETA-0001")
+            self.assertIsNotNone(task)
+            self.assertEqual(task.context["task_card_message_id"], "fake-msg-0001")
+            self.assertEqual(task.context["latest_task_card_message_id"], "fake-msg-0001")
+            self.assertEqual(task.context["task_card_send_count"], 1)
 
     def test_wrong_chat_is_ignored(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -98,6 +102,9 @@ class BetaOrchestratorTests(unittest.TestCase):
             task = store.load_task("BETA-0001")
             self.assertIsNotNone(task)
             self.assertEqual(task.status.value, "scanning")
+            self.assertEqual(task.context["task_card_message_id"], "fake-msg-0001")
+            self.assertEqual(task.context["latest_task_card_message_id"], "fake-msg-0002")
+            self.assertEqual(task.context["task_card_send_count"], 2)
             self.assertIn("候选池已筛出", client.sent_messages[-1].text)
             self.assertEqual(len(client.sent_messages), 2)
 

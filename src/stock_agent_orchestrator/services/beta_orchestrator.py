@@ -115,6 +115,11 @@ class BetaOrchestratorService:
             )[0]
         except Exception as exc:
             return BetaProcessResult(False, task_id=task.task_id, reason=f"operation_error:{exc}")
+        if sent.message_id:
+            task.context.setdefault("task_card_message_id", sent.message_id)
+            task.context["latest_task_card_message_id"] = sent.message_id
+            task.context["task_card_send_count"] = int(task.context.get("task_card_send_count") or 0) + 1
+            self.store.save_task(task)
         return BetaProcessResult(True, task_id=task.task_id, sent_message=sent)
 
     def _next_task_id(self) -> str:

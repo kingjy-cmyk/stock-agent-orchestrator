@@ -127,6 +127,7 @@ Stage 2B 剩余：
 - 小巴消息可把每日候选池任务从 `planned` 推进到 `scanning`。
 - 更新后会发送新的任务卡 markdown 回执。
 - 后续消息显式包含 `BETA-0001` 时，会优先绑定该任务，而不是最新任务。
+- 任务 context 会保存 `task_card_message_id`、`latest_task_card_message_id`、`task_card_send_count`。
 
 仍缺：
 

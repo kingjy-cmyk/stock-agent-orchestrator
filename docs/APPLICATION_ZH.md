@@ -43,6 +43,7 @@
 - `beta-live-preflight` 真实 beta 前准入检查。
 - 小智-beta / 小巴-beta 后续消息更新同一任务的 MVP。
 - agent 后续消息可通过显式 `BETA-0001` 绑定目标任务。
+- 任务 context 已保存任务卡 `message_id`，为后续 `update_card` 做准备。
 - 中文说明、安装、维护、路线图、飞书连接器文档。
 - 单元测试 49 项通过。
 

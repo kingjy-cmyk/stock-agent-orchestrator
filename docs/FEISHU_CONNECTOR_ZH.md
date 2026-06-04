@@ -117,6 +117,7 @@ stock-agent-orchestrator beta-live-preflight --config configs/beta.live.toml --c
 - operation 发送失败会记录到 gateway，并让业务结果返回 `operation_error`，避免 worker 直接崩溃。
 - 小智-beta / 小巴-beta 的后续消息可推进同一任务，并发送更新后的任务卡 markdown。
 - 小智-beta / 小巴-beta 消息中显式包含 `BETA-0001` 时，会优先绑定该任务，降低多任务并行误更新风险。
+- 任务 context 会记录首次和最近一次任务卡 `message_id`，为后续 `update_card` 做准备。
 
 当前限制：
 
