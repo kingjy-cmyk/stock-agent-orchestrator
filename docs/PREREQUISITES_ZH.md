@@ -301,6 +301,7 @@ stock-agent-orchestrator beta-smoke --config configs/beta.example.toml
 - `feishu.send_allowlist` 内包含 beta 群 `chat_id`
 - 飞书事件订阅 `verification_token`
 - 飞书事件订阅 `encrypt_key`，用于请求签名校验
+- `feishu.webhook_rate_limit_per_minute`，建议 beta 初期使用 `60`
 - 公网可访问的 callback URL
 - CLI 启动时显式加 `--allow-live-send`
 

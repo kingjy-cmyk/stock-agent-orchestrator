@@ -57,6 +57,7 @@ app_secret = "real-secret-placeholder-for-test"
 send_allowlist = ["oc_beta_chat"]
 verification_token = "verify-token"
 encrypt_key = "encrypt-key"
+webhook_rate_limit_per_minute = 60
 """,
                 encoding="utf-8",
             )

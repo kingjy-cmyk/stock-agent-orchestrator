@@ -48,6 +48,7 @@ class FeishuConfig:
     send_allowlist: list[str] = field(default_factory=list)
     verification_token: str = ""
     encrypt_key: str = ""
+    webhook_rate_limit_per_minute: int = 60
 
 
 @dataclass(frozen=True, slots=True)

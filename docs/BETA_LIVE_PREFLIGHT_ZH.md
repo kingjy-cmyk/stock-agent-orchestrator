@@ -25,6 +25,7 @@ copy configs\beta.live.example.toml configs\beta.live.toml
 - `feishu.send_allowlist`
 - `feishu.verification_token`
 - `feishu.encrypt_key`
+- `feishu.webhook_rate_limit_per_minute`
 - `paths.candidate_list`
 - `paths.seven_layer_reports`
 - `paths.entry_monitor_reports`
@@ -54,6 +55,7 @@ stock-agent-orchestrator beta-live-preflight --config configs/beta.live.toml --c
 - 必填字段没有占位符。
 - `feishu.verification_token` 已配置，用于飞书 callback token 校验。
 - `feishu.encrypt_key` 已配置，用于 `X-Lark-Signature` 请求签名校验和 encrypt payload 解密。
+- `feishu.webhook_rate_limit_per_minute > 0`。
 - callback URL 是公网 `https`。
 
 ## 通过后怎么做
@@ -76,6 +78,7 @@ stock-agent-orchestrator run-webhook --config configs/beta.live.toml --allow-liv
 
 - beta 群出现 `BETA-0001` 任务卡。
 - `/healthz` 显示 `operation_error_count = 0`。
+- `/healthz` 显示 `rate_limited_count` 可观测，正常单次验证应为 0。
 - 重复投递不会重复建任务。
 
 ## 当前限制
@@ -85,3 +88,4 @@ stock-agent-orchestrator run-webhook --config configs/beta.live.toml --allow-liv
 - 已支持基于 `encrypt_key` 的 `X-Lark-Signature` 请求签名校验。
 - 已支持飞书 encrypt payload 解密。
 - 去重和 operation error 记录已持久化到 SQLite。
+- 已支持 webhook 入口限流。

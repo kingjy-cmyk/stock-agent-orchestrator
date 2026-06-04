@@ -12,14 +12,14 @@ from stock_agent_orchestrator.services.connector_worker import ConnectorWorker
 from stock_agent_orchestrator.services.ingress import BoundedIngressQueue
 
 
-def payload(text: str = "@小C-beta 今天先给我一份候选池") -> dict:
+def payload(text: str = "@小C-beta 今天先给我一份候选池", *, event_id: str = "evt-1", message_id: str = "msg-1") -> dict:
     return {
         "token": "verify-token",
-        "event_id": "evt-1",
+        "event_id": event_id,
         "event": {
             "sender": {"sender_id": {"open_id": "user-open-id"}},
             "message": {
-                "message_id": "msg-1",
+                "message_id": message_id,
                 "chat_id": "replace-me",
                 "chat_type": "group",
                 "content": f'{{"text":"{text}"}}',
@@ -90,6 +90,45 @@ class FeishuWebhookTests(unittest.TestCase):
             self.assertEqual(second.reason, "duplicate_event")
             self.assertEqual(len(client.sent_messages), 1)
             self.assertEqual(gateway.state_snapshot().duplicate_count, 1)
+
+    def test_rate_limited_event_is_accepted_but_not_enqueued(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            now = 1000.0
+            client = FakeFeishuClient()
+            gateway = FeishuWebhookGateway(
+                worker=self._worker(tmp, client),
+                rate_limit_per_minute=1,
+                clock=lambda: now,
+            )
+
+            first = gateway.handle_payload(payload(event_id="evt-1", message_id="msg-1"), drain=True)
+            second = gateway.handle_payload(payload(event_id="evt-2", message_id="msg-2"), drain=True)
+
+            self.assertTrue(first.enqueued)
+            self.assertTrue(second.accepted)
+            self.assertFalse(second.enqueued)
+            self.assertEqual(second.reason, "rate_limited")
+            self.assertEqual(len(client.sent_messages), 1)
+            self.assertEqual(gateway.state_snapshot().rate_limited_count, 1)
+
+    def test_rate_limit_window_expires(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            current_time = [1000.0]
+            client = FakeFeishuClient()
+            gateway = FeishuWebhookGateway(
+                worker=self._worker(tmp, client),
+                rate_limit_per_minute=1,
+                clock=lambda: current_time[0],
+            )
+
+            first = gateway.handle_payload(payload(event_id="evt-1", message_id="msg-1"), drain=True)
+            current_time[0] += 61.0
+            second = gateway.handle_payload(payload(event_id="evt-2", message_id="msg-2"), drain=True)
+
+            self.assertTrue(first.enqueued)
+            self.assertTrue(second.enqueued)
+            self.assertEqual(gateway.state_snapshot().rate_limited_count, 0)
+            self.assertEqual(len(client.sent_messages), 2)
 
     def test_persistent_dedupe_survives_gateway_restart(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

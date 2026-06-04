@@ -31,3 +31,4 @@ app_secret = ""
 send_allowlist = ["replace-me"]
 verification_token = ""
 encrypt_key = ""
+webhook_rate_limit_per_minute = 60

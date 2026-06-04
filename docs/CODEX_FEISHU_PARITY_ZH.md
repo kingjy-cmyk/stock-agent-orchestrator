@@ -33,7 +33,7 @@
 | Card action callback | 未完成 | 无 | Stage 3 需要补 |
 | Interactive card update | 已完成 MVP | `SEND_CARD` 发送 updateable interactive card，`UPDATE_CARD` 通过 `message_id` 更新 | 待真实 beta 群验收 |
 | Message dedupe | 已完成 MVP | `FeishuWebhookGateway` + `SQLiteGatewayStateStore` 持久化去重 | 后续补 stale drop |
-| Rate limit | 未完成 | 仅队列上限 | 真实 beta 前必须补 |
+| Rate limit | 已完成 MVP | `webhook_rate_limit_per_minute` 入口限流 + 队列上限 | 后续补更细 per-agent/per-chat 限流 |
 | Gateway state | 已完成 MVP | `/healthz` 暴露 `connected/degraded` 和计数 | 后续补 daemon 级心跳 |
 | Operation error 记录 | 已完成 MVP | `GuardedOperationGateway` + `SQLiteGatewayStateStore` 持久化错误表 | 后续补错误恢复策略 |
 | Multi app / multi gateway | 未完成 | 单 beta gateway | 后续视需要补 |
@@ -55,7 +55,7 @@
 
 - 公网 callback 部署
 - 飞书事件订阅配置
-- rate limit 细化
+- 更细 per-agent/per-chat 限流
 
 已补齐：
 
@@ -65,6 +65,7 @@
 - gateway 重启后重复事件不再入队
 - 基于 `encrypt_key` 的 `X-Lark-Signature` 请求签名校验
 - 飞书 encrypt payload 解密
+- webhook 入口限流和 `rate_limited_count` 可观测
 
 Stage 3 已补：
 

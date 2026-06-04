@@ -14,6 +14,7 @@ create table if not exists gateway_counters (
   accepted_count integer not null default 0,
   enqueued_count integer not null default 0,
   duplicate_count integer not null default 0,
+  rate_limited_count integer not null default 0,
   operation_error_count integer not null default 0,
   last_error text not null default ''
 );
@@ -43,6 +44,7 @@ class GatewayStateRow:
     accepted_count: int = 0
     enqueued_count: int = 0
     duplicate_count: int = 0
+    rate_limited_count: int = 0
     operation_error_count: int = 0
     last_error: str = ""
 
@@ -56,12 +58,13 @@ class SQLiteGatewayStateStore:
         conn = sqlite3.connect(self.db_path)
         try:
             conn.executescript(SCHEMA)
+            self._ensure_column(conn, "gateway_counters", "rate_limited_count", "integer not null default 0")
             conn.commit()
         finally:
             conn.close()
 
     def increment(self, instance_id: str, field: str, amount: int = 1) -> None:
-        if field not in {"accepted_count", "enqueued_count", "duplicate_count", "operation_error_count"}:
+        if field not in {"accepted_count", "enqueued_count", "duplicate_count", "rate_limited_count", "operation_error_count"}:
             raise ValueError(f"unsupported gateway counter: {field}")
         conn = sqlite3.connect(self.db_path)
         try:
@@ -155,6 +158,7 @@ class SQLiteGatewayStateStore:
                 accepted_count=int(row["accepted_count"]),
                 enqueued_count=int(row["enqueued_count"]),
                 duplicate_count=int(row["duplicate_count"]),
+                rate_limited_count=int(row["rate_limited_count"]),
                 operation_error_count=int(row["operation_error_count"]),
                 last_error=str(row["last_error"] or ""),
             )
@@ -189,6 +193,12 @@ class SQLiteGatewayStateStore:
     @staticmethod
     def _ensure_counter_row(conn: sqlite3.Connection, instance_id: str) -> None:
         conn.execute("insert or ignore into gateway_counters(instance_id) values(?)", (instance_id,))
+
+    @staticmethod
+    def _ensure_column(conn: sqlite3.Connection, table: str, column: str, definition: str) -> None:
+        columns = {str(row[1]) for row in conn.execute(f"pragma table_info({table})").fetchall()}
+        if column not in columns:
+            conn.execute(f"alter table {table} add column {column} {definition}")
 
     @staticmethod
     def _now() -> str:

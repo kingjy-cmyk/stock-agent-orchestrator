@@ -76,6 +76,7 @@ stock-agent-orchestrator run-webhook --config configs/beta.example.toml --host 1
 `run-webhook` 默认会把 gateway runtime state 写入同一个 SQLite db 文件：
 
 - accepted / enqueued / duplicate 计数。
+- rate limited 计数。
 - operation error 计数和最后错误。
 - `event_id/message_id` 去重 key。
 - operation error 明细。
@@ -94,6 +95,7 @@ stock-agent-orchestrator run-webhook --config configs/beta.example.toml --host 1
 - `feishu.group_chat_id` 必须在 `feishu.send_allowlist` 内
 - `feishu.verification_token` 必须配置
 - `feishu.encrypt_key` 建议配置；配置后 callback 必须通过 `X-Lark-Signature` 校验
+- `feishu.webhook_rate_limit_per_minute` 必须大于 0
 
 不满足任一条件，都不会向真实飞书群发送消息。
 
@@ -126,8 +128,9 @@ stock-agent-orchestrator beta-live-preflight --config configs/beta.live.toml --c
 
 - `FeishuWebhookGateway` 使用 `event_id/message_id` 做去重，重复事件会 accepted 但不会再次入队。
 - `run-webhook` 默认通过 `SQLiteGatewayStateStore` 持久化去重和 operation error，重启后不丢状态。
-- `/healthz` 暴露 `connected/degraded`、accepted、enqueued、duplicate、operation error 计数。
+- `/healthz` 暴露 `connected/degraded`、accepted、enqueued、duplicate、rate limited、operation error 计数。
 - `GuardedOperationGateway` 会拒绝不在 `send_allowlist` 内的 chat_id。
+- `FeishuWebhookGateway` 会按 `webhook_rate_limit_per_minute` 做入口限流，超过后 accepted 但不入队，避免平台重试放大压力。
 - `FeishuWebhookGateway` 会在配置 `verification_token` 后拒绝 token 不匹配的 callback。
 - HTTP webhook 会在配置 `encrypt_key` 后校验 `X-Lark-Request-Timestamp`、`X-Lark-Request-Nonce`、`X-Lark-Signature`。
 - HTTP webhook 支持 `{"encrypt": "..."}` 加密 payload 解密，解密后再交给业务 gateway。
@@ -154,7 +157,6 @@ PATCH /open-apis/im/v1/messages/:message_id
 
 当前限制：
 
-- 还没有真正的 rate limit，只有限制入口队列长度。
 - interactive card update 已完成本地和请求形态测试，但还没有真实 beta 群验收证据。
 - 还没有根据 reply/thread/message_id 绑定原任务卡。
 

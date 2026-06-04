@@ -111,6 +111,37 @@ class FeishuHTTPTests(unittest.TestCase):
                 server.server_close()
                 thread.join(timeout=5)
 
+    def test_http_webhook_rate_limits_without_rejecting_callback(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            client = FakeFeishuClient()
+            config = load_config(Path("configs/beta.example.toml"))
+            config = replace(config, feishu=replace(config.feishu, webhook_rate_limit_per_minute=1))
+            server = build_webhook_server(
+                host="127.0.0.1",
+                port=0,
+                config=config,
+                db_path=Path(tmp) / "beta.db",
+                feishu_client=client,
+            )
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            try:
+                base = f"http://127.0.0.1:{server.server_address[1]}"
+                first = self._post_json(f"{base}/webhook", self._message_payload(event_id="evt-http-1", message_id="msg-http-1"))
+                second = self._post_json(f"{base}/webhook", self._message_payload(event_id="evt-http-2", message_id="msg-http-2"))
+                health = self._get_json(f"{base}/healthz")
+
+                self.assertTrue(first["enqueued"])
+                self.assertTrue(second["accepted"])
+                self.assertFalse(second["enqueued"])
+                self.assertEqual(second["reason"], "rate_limited")
+                self.assertEqual(len(client.sent_messages), 1)
+                self.assertEqual(health["gateway"]["rate_limited_count"], 1)
+            finally:
+                server.shutdown()
+                server.server_close()
+                thread.join(timeout=5)
+
     def test_http_webhook_accepts_valid_lark_signature_when_encrypt_key_is_configured(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             client = FakeFeishuClient()
@@ -294,19 +325,20 @@ class FeishuHTTPTests(unittest.TestCase):
         with urllib.request.urlopen(req, timeout=5) as response:
             return json.loads(response.read().decode("utf-8"))
 
-    def _message_payload(self) -> dict:
+    def _message_payload(self, *, event_id: str = "evt-http-1", message_id: str = "msg-http-1") -> dict:
         return {
-            "event_id": "evt-http-1",
+            "event_id": event_id,
             "event": {
                 "sender": {"sender_id": {"open_id": "user-open-id"}},
                 "message": {
-                    "message_id": "msg-http-1",
+                    "message_id": message_id,
                     "chat_id": "replace-me",
                     "content": json.dumps({"text": "@小C-beta 今天先给我一份候选池"}, ensure_ascii=False),
                     "mentions": [{"id": {"open_id": "replace-me"}}],
                 },
             },
         }
+
 
 def encrypt_lark_payload(payload: dict, encrypt_key: str) -> str:
     raw = json.dumps(payload, ensure_ascii=False).encode("utf-8")

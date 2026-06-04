@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import json
+import time
 from collections import deque
 from dataclasses import asdict, dataclass
-from typing import Any, Protocol
+from typing import Any, Callable, Protocol
 
 from stock_agent_orchestrator.connectors.feishu import FeishuMessageEvent, FeishuOperationError, OperationErrorRecorder
 from stock_agent_orchestrator.services.connector_worker import ConnectorWorker, WorkerRunReport
@@ -25,6 +26,7 @@ class GatewayStateSnapshot:
     accepted_count: int
     enqueued_count: int
     duplicate_count: int
+    rate_limited_count: int
     operation_error_count: int
     last_error: str = ""
 
@@ -67,19 +69,25 @@ class FeishuWebhookGateway(OperationErrorRecorder):
         dedupe_window: int = 2048,
         verification_token: str = "",
         state_store: GatewayStateStore | None = None,
+        rate_limit_per_minute: int = 0,
+        clock: Callable[[], float] | None = None,
     ) -> None:
         self.worker = worker
         self.instance_id = instance_id
         self.dedupe_window = dedupe_window
         self.verification_token = verification_token.strip()
         self.state_store = state_store
+        self.rate_limit_per_minute = max(0, rate_limit_per_minute)
+        self.clock = clock or time.monotonic
         if self.state_store is not None:
             self.state_store.init_db()
         self._seen_keys: set[str] = set()
         self._seen_order: deque[str] = deque()
+        self._rate_window: deque[float] = deque()
         self._accepted_count = 0
         self._enqueued_count = 0
         self._duplicate_count = 0
+        self._rate_limited_count = 0
         self._operation_errors: list[FeishuOperationError] = []
         self._last_error = ""
 
@@ -106,6 +114,9 @@ class FeishuWebhookGateway(OperationErrorRecorder):
         if self._is_duplicate(event):
             self._increment("duplicate_count")
             return WebhookResult(True, enqueued=False, reason="duplicate_event")
+        if self._is_rate_limited():
+            self._increment("rate_limited_count")
+            return WebhookResult(True, enqueued=False, reason="rate_limited")
 
         self.worker.enqueue(IngressItem(self.instance_id, event))
         self._increment("enqueued_count")
@@ -131,6 +142,7 @@ class FeishuWebhookGateway(OperationErrorRecorder):
                 accepted_count=row.accepted_count,
                 enqueued_count=row.enqueued_count,
                 duplicate_count=row.duplicate_count,
+                rate_limited_count=row.rate_limited_count,
                 operation_error_count=row.operation_error_count,
                 last_error=row.last_error,
             )
@@ -142,6 +154,7 @@ class FeishuWebhookGateway(OperationErrorRecorder):
             accepted_count=self._accepted_count,
             enqueued_count=self._enqueued_count,
             duplicate_count=self._duplicate_count,
+            rate_limited_count=self._rate_limited_count,
             operation_error_count=len(self._operation_errors),
             last_error=self._last_error,
         )
@@ -174,6 +187,18 @@ class FeishuWebhookGateway(OperationErrorRecorder):
             return True
         return str(payload.get("token") or "").strip() == self.verification_token
 
+    def _is_rate_limited(self) -> bool:
+        if self.rate_limit_per_minute <= 0:
+            return False
+        now = self.clock()
+        cutoff = now - 60.0
+        while self._rate_window and self._rate_window[0] <= cutoff:
+            self._rate_window.popleft()
+        if len(self._rate_window) >= self.rate_limit_per_minute:
+            return True
+        self._rate_window.append(now)
+        return False
+
     def _increment(self, field: str) -> None:
         if self.state_store is not None:
             self.state_store.increment(self.instance_id, field)
@@ -184,6 +209,8 @@ class FeishuWebhookGateway(OperationErrorRecorder):
             self._enqueued_count += 1
         elif field == "duplicate_count":
             self._duplicate_count += 1
+        elif field == "rate_limited_count":
+            self._rate_limited_count += 1
         else:
             raise ValueError(f"unsupported in-memory gateway counter: {field}")
 

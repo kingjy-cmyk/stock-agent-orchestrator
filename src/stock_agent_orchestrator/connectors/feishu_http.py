@@ -126,6 +126,7 @@ def build_webhook_server(
     gateway = FeishuWebhookGateway(
         verification_token=config.feishu.verification_token,
         state_store=SQLiteGatewayStateStore(db_path) if persist_gateway_state else None,
+        rate_limit_per_minute=config.feishu.webhook_rate_limit_per_minute,
     )
     operation_gateway = (
         None

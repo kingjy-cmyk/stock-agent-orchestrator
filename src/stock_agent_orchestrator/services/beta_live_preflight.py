@@ -79,6 +79,13 @@ def run_beta_live_preflight(config: OrchestratorConfig, *, callback_url: str) ->
         "new rules require user review",
         "new rules must require user review",
     )
+    _add_check(
+        checks,
+        "webhook_rate_limit",
+        config.feishu.webhook_rate_limit_per_minute > 0,
+        f"webhook rate limit is {config.feishu.webhook_rate_limit_per_minute}/minute",
+        "feishu.webhook_rate_limit_per_minute must be greater than 0 for beta live",
+    )
 
     placeholder_fields = _required_placeholder_fields(config)
     checks.append(
