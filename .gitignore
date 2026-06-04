@@ -1,4 +1,5 @@
 .runtime/
+configs/beta.live.toml
 *.db
 __pycache__/
 *.pyc

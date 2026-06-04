@@ -33,7 +33,7 @@ stock-agent-orchestrator beta-validation-guide --config configs/beta.live.toml -
 
 ## 推荐顺序
 
-1. 准备 `configs/beta.live.toml`。
+1. 运行 `init-beta-live-config` 生成本地 `configs/beta.live.toml`。
 2. 运行 `beta-validation-guide`。
 3. 如果向导显示 `fix_preflight_before_live_beta`，先修配置。
 4. 如果向导显示 `run_live_beta_and_collect_evidence`，再启动 `run-webhook --allow-live-send`。
@@ -49,6 +49,14 @@ stock-agent-orchestrator beta-validation-guide --config configs/beta.live.toml -
 ```bash
 stock-agent-orchestrator beta-callback-probe --config configs/beta.live.toml --callback-url https://your-public-domain.example --format markdown
 ```
+
+真实配置初始化命令：
+
+```bash
+stock-agent-orchestrator init-beta-live-config --output configs/beta.live.toml
+```
+
+`configs/beta.live.toml` 已被 `.gitignore` 排除，不应提交到 GitHub。
 
 ## 验收成功标准
 

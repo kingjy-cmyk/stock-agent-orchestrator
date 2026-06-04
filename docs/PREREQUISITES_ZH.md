@@ -305,6 +305,14 @@ stock-agent-orchestrator beta-smoke --config configs/beta.example.toml
 - 公网可访问的 callback URL
 - CLI 启动时显式加 `--allow-live-send`
 
+先生成本地真实配置：
+
+```bash
+stock-agent-orchestrator init-beta-live-config --output configs/beta.live.toml
+```
+
+`configs/beta.live.toml` 包含 `app_secret`、`verification_token`、`encrypt_key`，不要提交到 GitHub。
+
 进入真实 beta 群前必须先跑：
 
 ```bash

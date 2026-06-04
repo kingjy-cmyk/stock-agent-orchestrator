@@ -42,7 +42,7 @@ stock-agent-orchestrator application-readiness --format markdown
 
 ## 冲到 90+ 的最短路径
 
-1. 准备 `configs/beta.live.toml`。
+1. 运行 `init-beta-live-config` 生成本地 `configs/beta.live.toml`，再填入真实值。
 2. 运行 `beta-validation-guide`，确认是否允许进入真实 beta。
 3. 跑通 `beta-live-preflight`。
 4. 启动 `run-webhook --allow-live-send`。
@@ -53,6 +53,10 @@ stock-agent-orchestrator application-readiness --format markdown
 9. 补任务卡截图或录屏路径。
 
 推荐先运行：
+
+```bash
+stock-agent-orchestrator init-beta-live-config --output configs/beta.live.toml
+```
 
 ```bash
 stock-agent-orchestrator beta-validation-guide --config configs/beta.live.toml --callback-url https://your-public-domain.example --format markdown

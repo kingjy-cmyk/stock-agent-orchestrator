@@ -22,6 +22,11 @@ from stock_agent_orchestrator.services.beta_callback_probe import (
     callback_probe_report_to_markdown,
     run_beta_callback_probe,
 )
+from stock_agent_orchestrator.services.beta_live_config import (
+    beta_live_config_init_to_dict,
+    beta_live_config_init_to_markdown,
+    init_beta_live_config,
+)
 from stock_agent_orchestrator.services.beta_live_preflight import (
     preflight_report_to_dict,
     preflight_report_to_markdown,
@@ -119,6 +124,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     validate_config_cmd = sub.add_parser("validate-config")
     validate_config_cmd.add_argument("--config", required=True)
+
+    init_beta_live_config_cmd = sub.add_parser("init-beta-live-config")
+    init_beta_live_config_cmd.add_argument("--template", default="configs/beta.live.example.toml")
+    init_beta_live_config_cmd.add_argument("--output", default="configs/beta.live.toml")
+    init_beta_live_config_cmd.add_argument("--force", action="store_true")
+    init_beta_live_config_cmd.add_argument("--format", choices=["json", "markdown"], default="markdown")
 
     app_readiness = sub.add_parser("application-readiness")
     app_readiness.add_argument("--repo-root", default=".")
@@ -355,6 +366,20 @@ def main() -> None:
         }, ensure_ascii=False, indent=2))
         if any(issue.severity == "error" for issue in issues):
             raise SystemExit(1)
+        return
+
+    if args.command == "init-beta-live-config":
+        result = init_beta_live_config(
+            template_path=Path(args.template),
+            output_path=Path(args.output),
+            force=args.force,
+        )
+        rendered = (
+            beta_live_config_init_to_markdown(result)
+            if args.format == "markdown"
+            else json.dumps(beta_live_config_init_to_dict(result), ensure_ascii=False, indent=2)
+        )
+        print(rendered)
         return
 
     if args.command == "application-readiness":

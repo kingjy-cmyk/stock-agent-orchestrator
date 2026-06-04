@@ -47,7 +47,7 @@
 - agent 后续消息可通过显式 `BETA-0001` 绑定目标任务。
 - 任务 context 已保存任务卡 `message_id`，后续进展优先更新同一张 interactive card。
 - 中文说明、安装、维护、路线图、飞书连接器文档。
-- 单元测试 70 项通过。
+- 单元测试 75 项通过。
 
 ## 当前边界
 
@@ -106,6 +106,7 @@ stock-agent-orchestrator doctor
 stock-agent-orchestrator demo
 stock-agent-orchestrator beta-smoke --config configs/beta.example.toml
 stock-agent-orchestrator webhook-smoke --config configs/beta.example.toml
+stock-agent-orchestrator init-beta-live-config --output configs/beta.live.toml
 stock-agent-orchestrator beta-validation-guide --config configs/beta.live.toml --callback-url https://your-public-domain.example --format markdown
 stock-agent-orchestrator beta-live-preflight --config configs/beta.live.toml --callback-url https://your-public-domain.example
 stock-agent-orchestrator beta-callback-probe --config configs/beta.live.toml --callback-url https://your-public-domain.example --format markdown
