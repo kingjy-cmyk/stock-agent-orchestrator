@@ -49,6 +49,27 @@ class ShadowReplayTests(unittest.TestCase):
             self.assertIn("silent_break", markdown)
             self.assertEqual(report.findings[0].severity, "warning")
 
+    def test_shadow_replay_merges_followup_commands_into_active_task(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            sample = Path(tmp) / "messages.jsonl"
+            sample.write_text(
+                "\n".join(
+                    [
+                        json.dumps({"sender_name": "BOOS", "text": "@小C 建立离线 Shadow Mode"}),
+                        json.dumps({"sender_name": "BOOS", "text": "继续完善这个功能"}),
+                        json.dumps({"sender_name": "小C", "text": "已补充 CLI"}),
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            store = SQLiteTaskStore(Path(tmp) / "shadow.db")
+
+            report = ShadowReplayService().replay_file(sample, store)
+
+            self.assertEqual(report.created_tasks, 1)
+            self.assertEqual(report.advanced_events, 2)
+            self.assertGreaterEqual(report.tasks[0]["event_count"], 5)
+
     def test_extract_relay_log_messages_sanitizes_actor_and_text(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             log = Path(tmp) / "relay.log"

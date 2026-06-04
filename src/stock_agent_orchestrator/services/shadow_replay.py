@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from stock_agent_orchestrator.adapters.feishu_control import FeishuControlAdapter, FeishuEnvelope
-from stock_agent_orchestrator.domain.models import AgentRole, EventType, Task, TaskEvent, TaskStatus
+from stock_agent_orchestrator.domain.models import AgentRole, EventType, Task, TaskEvent, TaskIntent, TaskStatus
 from stock_agent_orchestrator.persistence.sqlite_store import SQLiteTaskStore
 from stock_agent_orchestrator.services.task_engine import TaskEngine
 
@@ -78,6 +78,12 @@ class ShadowReplayService:
                 )
             )
             if command is not None:
+                if should_merge_command_into_active_task(active_task, command.intent, command.raw_text):
+                    active_task = self._append_shadow_note(active_task, message, AgentRole.USER)
+                    store.save_task(active_task)
+                    tasks[-1] = active_task
+                    advanced += 1
+                    continue
                 task = self.engine.create_task(
                     task_id=f"SHADOW-{index:04d}",
                     title=command.title,
@@ -104,16 +110,7 @@ class ShadowReplayService:
             role = infer_agent_role(message.sender_name, message.text)
             if role is None:
                 continue
-            active_task = self.engine.advance_task(
-                active_task,
-                actor=role,
-                message=message.text,
-                within_known_rules=is_known_rule_message(message.text),
-                ask_user=is_waiting_user_message(message.text),
-            )
-            active_task.events[-1].metadata.update(
-                {"shadow_created_at": message.created_at, "shadow_sender_name": message.sender_name}
-            )
+            active_task = self._append_shadow_note(active_task, message, role)
             store.save_task(active_task)
             tasks[-1] = active_task
             advanced += 1
@@ -126,6 +123,19 @@ class ShadowReplayService:
             findings=findings,
             tasks=[task_summary(task) for task in tasks],
         )
+
+    def _append_shadow_note(self, task: Task, message: ShadowMessage, role: AgentRole) -> Task:
+        task = self.engine.advance_task(
+            task,
+            actor=role,
+            message=message.text,
+            within_known_rules=is_known_rule_message(message.text),
+            ask_user=is_waiting_user_message(message.text),
+        )
+        task.events[-1].metadata.update(
+            {"shadow_created_at": message.created_at, "shadow_sender_name": message.sender_name}
+        )
+        return task
 
 
 def load_shadow_messages(path: Path) -> Iterable[ShadowMessage]:
@@ -310,6 +320,9 @@ def detect_stalls(tasks: list[Task]) -> list[ShadowFinding]:
 
 
 def task_summary(task: Task) -> dict[str, Any]:
+    source_preview = task.summary.replace("\n", " ").strip()
+    if len(source_preview) > 80:
+        source_preview = source_preview[:79] + "…"
     return {
         "task_id": task.task_id,
         "title": task.title,
@@ -318,6 +331,7 @@ def task_summary(task: Task) -> dict[str, Any]:
         "current_assignee": task.current_assignee.value,
         "event_count": len(task.events),
         "artifact_count": len(task.artifacts),
+        "source_preview": source_preview,
     }
 
 
@@ -344,7 +358,7 @@ def report_to_markdown(report: ShadowReplayReport) -> str:
     ]
     for task in report.tasks:
         lines.append(
-            f"- {task['task_id']} | {task['intent']} | {task['status']} | assignee={task['current_assignee']}"
+            f"- {task['task_id']} | {task['intent']} | {task['status']} | assignee={task['current_assignee']} | {task.get('source_preview', '')}"
         )
     lines.extend(["", "## Findings"])
     if not report.findings:
@@ -368,3 +382,25 @@ def is_known_rule_message(text: str) -> bool:
 
 def is_waiting_user_message(text: str) -> bool:
     return "需要你" in text or "请审批" in text or "等待审批" in text or "需要确认" in text
+
+
+def should_merge_command_into_active_task(active_task: Task | None, intent: TaskIntent, text: str) -> bool:
+    if active_task is None:
+        return False
+    if active_task.status in {TaskStatus.WAITING_USER, TaskStatus.RECORDED, TaskStatus.CLOSED}:
+        return False
+    followup_markers = (
+        "继续",
+        "下一步",
+        "接着",
+        "修正",
+        "完善",
+        "改善",
+        "推进",
+        "检查下",
+        "看看",
+        "现在进行到哪里",
+    )
+    if any(marker in text for marker in followup_markers):
+        return True
+    return active_task.intent == intent and len(active_task.events) < 8

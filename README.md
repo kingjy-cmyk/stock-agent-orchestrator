@@ -22,6 +22,7 @@
 中文文档入口：
 
 - [中文产品介绍](docs/INTRO_ZH.md)
+- [中文安装与快速验证](docs/INSTALL_ZH.md)
 - [中文流程与最终目标](docs/WORKFLOW_ZH.md)
 - [中文维护与审批手册](docs/MAINTENANCE_ZH.md)
 - [中文迭代路线图](docs/ROADMAP_ZH.md)
@@ -77,6 +78,30 @@ The first version in this repository focuses on:
 
 ```bash
 python -m pip install -e .
+```
+
+Bootstrap on a fresh machine:
+
+```powershell
+.\scripts\bootstrap.ps1
+```
+
+macOS / Linux:
+
+```bash
+sh scripts/bootstrap.sh
+```
+
+Quick environment check:
+
+```bash
+stock-agent-orchestrator doctor
+```
+
+Run a bundled local demo:
+
+```bash
+stock-agent-orchestrator demo
 ```
 
 ## CLI
@@ -150,6 +175,7 @@ Supported sample formats:
 
 - English architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - English rollout: [docs/ROLLOUT.md](docs/ROLLOUT.md)
+- 中文安装/验证: [docs/INSTALL_ZH.md](docs/INSTALL_ZH.md)
 - 中文产品说明: [docs/INTRO_ZH.md](docs/INTRO_ZH.md)
 - 中文全流程: [docs/WORKFLOW_ZH.md](docs/WORKFLOW_ZH.md)
 - 中文维护/审批: [docs/MAINTENANCE_ZH.md](docs/MAINTENANCE_ZH.md)

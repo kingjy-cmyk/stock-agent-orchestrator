@@ -8,6 +8,8 @@ from pathlib import Path
 from stock_agent_orchestrator.bridges.current_stack import CurrentStackBridge
 from stock_agent_orchestrator.domain.models import AgentRole, TaskIntent
 from stock_agent_orchestrator.persistence.sqlite_store import SQLiteTaskStore
+from stock_agent_orchestrator.services.demo import write_demo_sample
+from stock_agent_orchestrator.services.doctor import doctor_report_to_dict, run_doctor
 from stock_agent_orchestrator.services.rule_memory import RuleMemoryService
 from stock_agent_orchestrator.services.shadow_replay import (
     ShadowReplayService,
@@ -73,6 +75,13 @@ def build_parser() -> argparse.ArgumentParser:
     extract.add_argument("--log-file", required=True)
     extract.add_argument("--output", required=True)
     extract.add_argument("--limit", type=int, default=80)
+
+    doctor = sub.add_parser("doctor")
+    doctor.add_argument("--runtime-dir", default=".runtime")
+
+    demo = sub.add_parser("demo")
+    demo.add_argument("--runtime-dir", default=".runtime")
+    demo.add_argument("--format", choices=["json", "markdown"], default="markdown")
 
     return parser
 
@@ -204,6 +213,30 @@ def main() -> None:
         write_shadow_messages_jsonl(messages, Path(args.output))
         print(Path(args.output).resolve())
         print(len(messages))
+        return
+
+    if args.command == "doctor":
+        report = run_doctor(Path(args.runtime_dir))
+        print(json.dumps(doctor_report_to_dict(report), ensure_ascii=False, indent=2))
+        if not report.ok:
+            raise SystemExit(1)
+        return
+
+    if args.command == "demo":
+        runtime_dir = Path(args.runtime_dir)
+        sample_path = write_demo_sample(runtime_dir / "demo-shadow-sample.jsonl")
+        db_path = runtime_dir / "demo.db"
+        report = ShadowReplayService().replay_file(sample_path, SQLiteTaskStore(db_path))
+        rendered = (
+            report_to_markdown(report)
+            if args.format == "markdown"
+            else json.dumps(report_to_dict(report), ensure_ascii=False, indent=2)
+        )
+        report_path = runtime_dir / f"demo-shadow-report.{'md' if args.format == 'markdown' else 'json'}"
+        report_path.write_text(rendered, encoding="utf-8")
+        print(rendered)
+        print(f"sample={sample_path.resolve()}")
+        print(f"report={report_path.resolve()}")
         return
 
 

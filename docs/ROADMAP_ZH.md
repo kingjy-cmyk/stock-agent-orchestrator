@@ -80,6 +80,32 @@
 - 是否允许从真实日志中抽取样本
 - 样本是否可以脱敏后保存在仓库或只放本地 `.runtime`
 
+### Phase 1A-3：任务聚合与拆装即用
+
+当前状态：`已完成`
+
+目标：
+
+- 减少同一条委托被拆成多个碎片任务
+- 提供新电脑安装后的自检命令
+- 提供不依赖正式群的内置演示样本
+
+已实现：
+
+- `doctor` 环境自检
+- `demo` 内置样本一键回放
+- `scripts/bootstrap.ps1` 新电脑 Windows 一键启动
+- `scripts/bootstrap.sh` macOS / Linux 一键启动
+- “继续/下一步/修正/完善/推进”等跟进消息会并入当前任务
+- 120 条真实 relay 日志离线回放中，任务碎片从约 30 个降到 16 个
+
+验收标准：
+
+- 新电脑 clone 后可以直接运行 bootstrap 脚本
+- `stock-agent-orchestrator doctor` 通过
+- `stock-agent-orchestrator demo` 能生成报告
+- 真实日志回放的任务碎片数量持续下降
+
 ### Phase 2：七层研究卡标准化
 
 当前状态：`待开始`
