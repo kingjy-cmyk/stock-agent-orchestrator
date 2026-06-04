@@ -6,6 +6,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from stock_agent_orchestrator.bridges.current_stack import CurrentStackBridge
+from stock_agent_orchestrator.config import config_to_dict, load_config, validate_config, validation_to_dict
 from stock_agent_orchestrator.domain.models import AgentRole, TaskIntent
 from stock_agent_orchestrator.persistence.sqlite_store import SQLiteTaskStore
 from stock_agent_orchestrator.services.demo import write_demo_sample
@@ -18,6 +19,7 @@ from stock_agent_orchestrator.services.shadow_replay import (
     report_to_markdown,
     write_shadow_messages_jsonl,
 )
+from stock_agent_orchestrator.services.task_card import render_task_card_markdown
 from stock_agent_orchestrator.services.task_engine import TaskEngine
 
 
@@ -82,6 +84,14 @@ def build_parser() -> argparse.ArgumentParser:
     demo = sub.add_parser("demo")
     demo.add_argument("--runtime-dir", default=".runtime")
     demo.add_argument("--format", choices=["json", "markdown"], default="markdown")
+
+    validate_config_cmd = sub.add_parser("validate-config")
+    validate_config_cmd.add_argument("--config", required=True)
+
+    render_card = sub.add_parser("render-task-card")
+    render_card.add_argument("--db", default=str(DEFAULT_DB))
+    render_card.add_argument("--task-id", required=True)
+    render_card.add_argument("--format", choices=["json", "markdown"], default="markdown")
 
     return parser
 
@@ -237,6 +247,32 @@ def main() -> None:
         print(rendered)
         print(f"sample={sample_path.resolve()}")
         print(f"report={report_path.resolve()}")
+        return
+
+    if args.command == "validate-config":
+        config = load_config(Path(args.config))
+        issues = validate_config(config)
+        print(json.dumps({
+            "config": config_to_dict(config),
+            "issues": validation_to_dict(issues),
+            "ok": not any(issue.severity == "error" for issue in issues),
+        }, ensure_ascii=False, indent=2))
+        if any(issue.severity == "error" for issue in issues):
+            raise SystemExit(1)
+        return
+
+    if args.command == "render-task-card":
+        store = SQLiteTaskStore(Path(args.db))
+        task = store.load_task(args.task_id)
+        if task is None:
+            raise SystemExit(f"task not found: {args.task_id}")
+        if args.format == "markdown":
+            print(render_task_card_markdown(task))
+        else:
+            print(json.dumps({
+                "task_id": task.task_id,
+                "card_markdown": render_task_card_markdown(task),
+            }, ensure_ascii=False, indent=2))
         return
 
 

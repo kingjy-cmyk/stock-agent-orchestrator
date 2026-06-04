@@ -273,3 +273,13 @@
 - `config/policy.example.yaml`：审批边界和自动推进规则
 - `config/data_sources.example.yaml`：行情、RSI、财务等数据源配置
 
+当前仓库已先提供 TOML 示例：
+
+- `configs/beta.example.toml`
+- `configs/formal.example.toml`
+
+可用以下命令做接入前校验：
+
+```bash
+stock-agent-orchestrator validate-config --config configs/beta.example.toml
+```

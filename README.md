@@ -173,6 +173,18 @@ Extract a sanitized local sample from `codex-remote-relayd.log`:
 stock-agent-orchestrator extract-relay-log --log-file /path/to/codex-remote-relayd.log --output .runtime/shadow-sample.jsonl --limit 120
 ```
 
+Validate a beta/formal config before Feishu connector work:
+
+```bash
+stock-agent-orchestrator validate-config --config configs/beta.example.toml
+```
+
+Render the task card that will later be sent into Feishu:
+
+```bash
+stock-agent-orchestrator render-task-card --task-id TASK-0001
+```
+
 Supported sample formats:
 
 - `.jsonl`: one JSON object per line with `sender_name`, `text`, optional `created_at`, optional `mentions_owner`

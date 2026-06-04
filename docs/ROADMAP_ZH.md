@@ -62,6 +62,8 @@
 
 要实现的能力：
 
+- 配置文件可加载和校验
+- 飞书任务卡格式可预览
 - 历史消息样本导入
 - codex-remote relay 日志脱敏抽样
 - Feishu 消息转任务事件
@@ -100,6 +102,31 @@
 - `scripts/bootstrap.sh` macOS / Linux 一键启动
 - “继续/下一步/修正/完善/推进”等跟进消息会并入当前任务
 - 120 条真实 relay 日志离线回放中，任务碎片从约 30 个降到 16 个
+
+### Phase 1A-4：飞书连接器前置地基
+
+当前状态：`进行中`
+
+目标：
+
+- 不接正式群，先消除飞书接入前的硬编码
+- 配置文件可加载、可校验
+- 任务卡格式先在 CLI 中预览
+- 为后续 beta 群发送任务卡做准备
+
+已实现：
+
+- `validate-config` 校验 beta/formal TOML 配置
+- 禁止 MVP 阶段开启实盘交易
+- 禁止 formal 环境默认 active 模式
+- placeholder 配置会给 warning
+- `render-task-card` 输出飞书任务卡 markdown 草案
+
+验收标准：
+
+- beta 配置无 error
+- formal active 配置会被拒绝
+- 本地任务能渲染为包含任务 ID、状态、责任人、下一步、审批状态、证据的任务卡
 
 验收标准：
 
