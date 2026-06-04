@@ -42,6 +42,7 @@
 - `send_allowlist`、`verification_token`、去重、状态健康检查、operation error 记录。
 - `beta-live-config-from-env` 可从环境变量生成 ignored 的真实 beta 配置。
 - `beta-live-config-status` 本地真实配置状态检查，输出脱敏字段状态。
+- `beta-live-prep-dry-run` 本地验证 beta live 准备链路，不触达真实飞书。
 - `beta-live-preflight` 真实 beta 前准入检查。
 - `beta-validation-guide` 真实 beta 验收向导。
 - `beta-live-runbook` 真实 beta 群运行手册。
@@ -50,7 +51,7 @@
 - agent 后续消息可通过显式 `BETA-0001` 绑定目标任务。
 - 任务 context 已保存任务卡 `message_id`，后续进展优先更新同一张 interactive card。
 - 中文说明、安装、维护、路线图、飞书连接器文档。
-- 单元测试 94 项通过。
+- 单元测试 96 项通过。
 
 ## 当前边界
 
@@ -109,6 +110,7 @@ stock-agent-orchestrator doctor
 stock-agent-orchestrator demo
 stock-agent-orchestrator beta-smoke --config configs/beta.example.toml
 stock-agent-orchestrator webhook-smoke --config configs/beta.example.toml
+stock-agent-orchestrator beta-live-prep-dry-run --format markdown
 stock-agent-orchestrator init-beta-live-config --output configs/beta.live.toml
 stock-agent-orchestrator beta-live-config-from-env --output configs/beta.live.toml --overwrite --format markdown
 stock-agent-orchestrator beta-live-config-status --config configs/beta.live.toml --format markdown

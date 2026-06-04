@@ -37,6 +37,12 @@ $env:FEISHU_WEBHOOK_RATE_LIMIT_PER_MINUTE="60"
 
 ## 写入配置
 
+先 dry-run 验证本地准备链路：
+
+```bash
+stock-agent-orchestrator beta-live-prep-dry-run --format markdown
+```
+
 ```bash
 stock-agent-orchestrator beta-live-config-from-env --output configs/beta.live.toml --overwrite --format markdown
 ```

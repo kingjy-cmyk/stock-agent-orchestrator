@@ -42,17 +42,22 @@ stock-agent-orchestrator application-readiness --format markdown
 
 ## 冲到 90+ 的最短路径
 
-1. 运行 `init-beta-live-config` 生成本地 `configs/beta.live.toml`，再手工填入真实值；或者用 `beta-live-config-from-env` 从环境变量生成。
-2. 运行 `beta-live-config-status`，确认配置存在、已被 `.gitignore` 保护、必要字段已填。
-3. 运行 `beta-validation-guide`，确认是否允许进入真实 beta。
-4. 运行 `beta-live-runbook`，生成真实 beta 群操作手册和停止条件。
-5. 启动 `run-webhook --allow-live-send`。
-6. 运行 `beta-callback-probe`，确认公网 `/healthz` 和 `/webhook` challenge 可用。
-7. 在 beta 群发送 `@小C-beta 今天先给我一份候选池`。
-8. 运行 `collect-beta-evidence`，自动保存 `/healthz` 到 `.runtime/healthz.json` 并生成 `docs/BETA_VALIDATION_REPORT_ZH.md`。
-9. 补任务卡截图或录屏路径。
+1. 运行 `beta-live-prep-dry-run`，确认本地准备链路能跑通。
+2. 运行 `init-beta-live-config` 生成本地 `configs/beta.live.toml`，再手工填入真实值；或者用 `beta-live-config-from-env` 从环境变量生成。
+3. 运行 `beta-live-config-status`，确认配置存在、已被 `.gitignore` 保护、必要字段已填。
+4. 运行 `beta-validation-guide`，确认是否允许进入真实 beta。
+5. 运行 `beta-live-runbook`，生成真实 beta 群操作手册和停止条件。
+6. 启动 `run-webhook --allow-live-send`。
+7. 运行 `beta-callback-probe`，确认公网 `/healthz` 和 `/webhook` challenge 可用。
+8. 在 beta 群发送 `@小C-beta 今天先给我一份候选池`。
+9. 运行 `collect-beta-evidence`，自动保存 `/healthz` 到 `.runtime/healthz.json` 并生成 `docs/BETA_VALIDATION_REPORT_ZH.md`。
+10. 补任务卡截图或录屏路径。
 
 推荐先运行：
+
+```bash
+stock-agent-orchestrator beta-live-prep-dry-run --format markdown
+```
 
 ```bash
 stock-agent-orchestrator init-beta-live-config --output configs/beta.live.toml

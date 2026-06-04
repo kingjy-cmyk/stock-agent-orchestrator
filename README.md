@@ -61,7 +61,7 @@ Current status:
 
 - local install/demo/smoke paths are documented
 - Feishu connector has a safe beta preflight gate
-- 94 unit tests pass locally
+- 96 unit tests pass locally
 - real Feishu beta validation is still pending
 
 Current readiness can be checked by command:
@@ -254,6 +254,10 @@ stock-agent-orchestrator run-webhook --config configs/beta.live.example.toml --a
 For beta safety, the live target chat must also be listed in `feishu.send_allowlist`, and `feishu.verification_token` must be configured for Feishu callback token verification. The webhook gateway exposes runtime counters at `/healthz`, including duplicate events and operation errors.
 
 Before touching a real beta group, run the stricter live preflight gate:
+
+```bash
+stock-agent-orchestrator beta-live-prep-dry-run --format markdown
+```
 
 ```bash
 stock-agent-orchestrator beta-live-config-status --config configs/beta.live.toml --format markdown

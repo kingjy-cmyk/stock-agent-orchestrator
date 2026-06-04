@@ -48,6 +48,11 @@ from stock_agent_orchestrator.services.beta_live_preflight import (
     preflight_report_to_markdown,
     run_beta_live_preflight,
 )
+from stock_agent_orchestrator.services.beta_live_prep_dry_run import (
+    beta_live_prep_dry_run_to_dict,
+    beta_live_prep_dry_run_to_markdown,
+    run_beta_live_prep_dry_run,
+)
 from stock_agent_orchestrator.services.beta_live_runbook import (
     beta_live_runbook_to_dict,
     beta_live_runbook_to_markdown,
@@ -174,6 +179,10 @@ def build_parser() -> argparse.ArgumentParser:
     beta_live_preflight.add_argument("--config", default="configs/beta.live.toml")
     beta_live_preflight.add_argument("--callback-url", required=True)
     beta_live_preflight.add_argument("--format", choices=["json", "markdown"], default="json")
+
+    beta_live_prep_dry_run = sub.add_parser("beta-live-prep-dry-run")
+    beta_live_prep_dry_run.add_argument("--callback-url", default="https://agent-beta.example.com")
+    beta_live_prep_dry_run.add_argument("--format", choices=["json", "markdown"], default="markdown")
 
     beta_live_runbook = sub.add_parser("beta-live-runbook")
     beta_live_runbook.add_argument("--repo-root", default=".")
@@ -491,6 +500,18 @@ def main() -> None:
             preflight_report_to_markdown(report)
             if args.format == "markdown"
             else json.dumps(preflight_report_to_dict(report), ensure_ascii=False, indent=2)
+        )
+        print(rendered)
+        if not report.ok:
+            raise SystemExit(1)
+        return
+
+    if args.command == "beta-live-prep-dry-run":
+        report = run_beta_live_prep_dry_run(callback_url=args.callback_url)
+        rendered = (
+            beta_live_prep_dry_run_to_markdown(report)
+            if args.format == "markdown"
+            else json.dumps(beta_live_prep_dry_run_to_dict(report), ensure_ascii=False, indent=2)
         )
         print(rendered)
         if not report.ok:
