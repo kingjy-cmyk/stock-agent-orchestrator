@@ -12,6 +12,11 @@ from stock_agent_orchestrator.connectors.feishu_http import build_webhook_server
 from stock_agent_orchestrator.connectors.feishu_webhook import FeishuWebhookGateway
 from stock_agent_orchestrator.domain.models import AgentRole, TaskIntent
 from stock_agent_orchestrator.persistence.sqlite_store import SQLiteTaskStore
+from stock_agent_orchestrator.services.beta_live_preflight import (
+    preflight_report_to_dict,
+    preflight_report_to_markdown,
+    run_beta_live_preflight,
+)
 from stock_agent_orchestrator.services.beta_orchestrator import BetaOrchestratorService
 from stock_agent_orchestrator.services.connector_worker import ConnectorWorker
 from stock_agent_orchestrator.services.demo import write_demo_sample
@@ -93,6 +98,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     validate_config_cmd = sub.add_parser("validate-config")
     validate_config_cmd.add_argument("--config", required=True)
+
+    beta_live_preflight = sub.add_parser("beta-live-preflight")
+    beta_live_preflight.add_argument("--config", default="configs/beta.live.toml")
+    beta_live_preflight.add_argument("--callback-url", required=True)
+    beta_live_preflight.add_argument("--format", choices=["json", "markdown"], default="json")
 
     render_card = sub.add_parser("render-task-card")
     render_card.add_argument("--db", default=str(DEFAULT_DB))
@@ -287,6 +297,18 @@ def main() -> None:
             "ok": not any(issue.severity == "error" for issue in issues),
         }, ensure_ascii=False, indent=2))
         if any(issue.severity == "error" for issue in issues):
+            raise SystemExit(1)
+        return
+
+    if args.command == "beta-live-preflight":
+        report = run_beta_live_preflight(load_config(Path(args.config)), callback_url=args.callback_url)
+        rendered = (
+            preflight_report_to_markdown(report)
+            if args.format == "markdown"
+            else json.dumps(preflight_report_to_dict(report), ensure_ascii=False, indent=2)
+        )
+        print(rendered)
+        if not report.ok:
             raise SystemExit(1)
         return
 

@@ -75,7 +75,7 @@ PLACEHOLDER_VALUES = {
 
 
 def load_config(path: Path) -> OrchestratorConfig:
-    payload = tomllib.loads(path.read_text(encoding="utf-8"))
+    payload = tomllib.loads(path.read_text(encoding="utf-8-sig"))
     missing = [section for section in REQUIRED_SECTIONS if section not in payload]
     if missing:
         raise ValueError(f"missing config sections: {', '.join(missing)}")

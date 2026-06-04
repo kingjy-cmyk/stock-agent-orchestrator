@@ -301,3 +301,9 @@ stock-agent-orchestrator beta-smoke --config configs/beta.example.toml
 - `feishu.send_allowlist` 内包含 beta 群 `chat_id`
 - 公网可访问的 callback URL
 - CLI 启动时显式加 `--allow-live-send`
+
+进入真实 beta 群前必须先跑：
+
+```bash
+stock-agent-orchestrator beta-live-preflight --config configs/beta.live.toml --callback-url https://your-public-domain.example
+```

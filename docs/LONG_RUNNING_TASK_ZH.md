@@ -76,6 +76,7 @@ Stage 2A 已实现：
 Stage 2B 剩余：
 
 - 准备 `configs/beta.live.toml`
+- 运行 `beta-live-preflight`
 - 填真实 beta 群 `chat_id`
 - 填小C-beta `open_id`
 - 填飞书 app_id / app_secret
@@ -83,6 +84,11 @@ Stage 2B 剩余：
 - 准备公网 callback 地址
 - 在飞书开放平台配置事件订阅
 - 真实 beta 群发消息后验证任务卡出现
+
+本轮新增：
+
+- `beta-live-preflight` 命令
+- [飞书 Beta Live Preflight](BETA_LIVE_PREFLIGHT_ZH.md)
 
 真实 beta 前安全项已完成 MVP：
 

@@ -87,6 +87,14 @@ stock-agent-orchestrator run-webhook --config configs/beta.example.toml --host 1
 stock-agent-orchestrator run-webhook --config configs/beta.live.example.toml --allow-live-send
 ```
 
+真实 beta 前先跑更严格的准入检查：
+
+```bash
+stock-agent-orchestrator beta-live-preflight --config configs/beta.live.toml --callback-url https://your-public-domain.example
+```
+
+详细步骤见：[飞书 Beta Live Preflight](BETA_LIVE_PREFLIGHT_ZH.md)。
+
 ## 下一步真实接入
 
 真实连接器应按这个顺序做：
