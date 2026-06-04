@@ -73,6 +73,11 @@ from stock_agent_orchestrator.services.beta_live_launch_packet import (
     beta_live_launch_packet_to_markdown,
     build_beta_live_launch_packet,
 )
+from stock_agent_orchestrator.services.beta_live_message_script import (
+    beta_live_message_script_to_dict,
+    beta_live_message_script_to_markdown,
+    build_beta_live_message_script,
+)
 from stock_agent_orchestrator.services.beta_live_prep_dry_run import (
     beta_live_prep_dry_run_to_dict,
     beta_live_prep_dry_run_to_markdown,
@@ -253,6 +258,10 @@ def build_parser() -> argparse.ArgumentParser:
     beta_live_evidence_rehearsal.add_argument("--callback-url", default="https://agent-beta.example.com")
     beta_live_evidence_rehearsal.add_argument("--commit", default="rehearsal-commit")
     beta_live_evidence_rehearsal.add_argument("--format", choices=["json", "markdown"], default="markdown")
+
+    beta_live_message_script = sub.add_parser("beta-live-message-script")
+    beta_live_message_script.add_argument("--task-id", default="BETA-0001")
+    beta_live_message_script.add_argument("--format", choices=["json", "markdown"], default="markdown")
 
     beta_live_intake_checklist = sub.add_parser("beta-live-intake-checklist")
     beta_live_intake_checklist.add_argument("--shell", choices=["powershell", "bash"], default="powershell")
@@ -681,6 +690,16 @@ def main() -> None:
         print(rendered)
         if not rehearsal.ok:
             raise SystemExit(1)
+        return
+
+    if args.command == "beta-live-message-script":
+        script = build_beta_live_message_script(task_id=args.task_id)
+        rendered = (
+            beta_live_message_script_to_markdown(script)
+            if args.format == "markdown"
+            else json.dumps(beta_live_message_script_to_dict(script), ensure_ascii=False, indent=2)
+        )
+        print(rendered)
         return
 
     if args.command == "beta-live-intake-checklist":
