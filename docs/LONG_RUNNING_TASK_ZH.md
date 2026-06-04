@@ -66,6 +66,26 @@ Stage 2A 已实现：
 - challenge 响应
 - Feishu 风格消息 payload 入队
 - fake send 任务卡
+- `LiveFeishuClient` 真实发送安全骨架
+- live 发送必须显式 `--allow-live-send`
+
+Stage 2B 剩余：
+
+- 对标 Codex 飞书通道补齐真实 beta 前安全项
+- 准备 `configs/beta.live.toml`
+- 填真实 beta 群 `chat_id`
+- 填小C-beta `open_id`
+- 填飞书 app_id / app_secret
+- 准备公网 callback 地址
+- 在飞书开放平台配置事件订阅
+- 真实 beta 群发消息后验证任务卡出现
+
+真实 beta 前必须补：
+
+- message_id 去重
+- gateway state
+- send allowlist
+- operation error 记录
 
 ### Stage 3：Task Card Update
 

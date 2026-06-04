@@ -24,6 +24,7 @@
 - [中文产品介绍](docs/INTRO_ZH.md)
 - [飞书优先原则](docs/FEISHU_FIRST_ZH.md)
 - [飞书连接器架构](docs/FEISHU_CONNECTOR_ZH.md)
+- [Codex 飞书通道对标矩阵](docs/CODEX_FEISHU_PARITY_ZH.md)
 - [长线推进任务](docs/LONG_RUNNING_TASK_ZH.md)
 - [运行前提与最小配置](docs/PREREQUISITES_ZH.md)
 - [中文安装与快速验证](docs/INSTALL_ZH.md)
@@ -211,6 +212,12 @@ Run the local webhook HTTP service. This still uses `FakeFeishuClient` and will 
 stock-agent-orchestrator run-webhook --config configs/beta.example.toml --host 127.0.0.1 --port 8787
 ```
 
+Live Feishu sending is guarded. It requires `feishu.send_mode = "live"`, real app credentials, and the explicit CLI flag:
+
+```bash
+stock-agent-orchestrator run-webhook --config configs/beta.live.example.toml --allow-live-send
+```
+
 Supported sample formats:
 
 - `.jsonl`: one JSON object per line with `sender_name`, `text`, optional `created_at`, optional `mentions_owner`
@@ -230,6 +237,7 @@ Supported sample formats:
 - English rollout: [docs/ROLLOUT.md](docs/ROLLOUT.md)
 - 飞书优先原则: [docs/FEISHU_FIRST_ZH.md](docs/FEISHU_FIRST_ZH.md)
 - 飞书连接器架构: [docs/FEISHU_CONNECTOR_ZH.md](docs/FEISHU_CONNECTOR_ZH.md)
+- Codex 飞书通道对标矩阵: [docs/CODEX_FEISHU_PARITY_ZH.md](docs/CODEX_FEISHU_PARITY_ZH.md)
 - 长线推进任务: [docs/LONG_RUNNING_TASK_ZH.md](docs/LONG_RUNNING_TASK_ZH.md)
 - 运行前提与最小配置: [docs/PREREQUISITES_ZH.md](docs/PREREQUISITES_ZH.md)
 - 中文安装/验证: [docs/INSTALL_ZH.md](docs/INSTALL_ZH.md)

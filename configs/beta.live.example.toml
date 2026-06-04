@@ -1,12 +1,12 @@
 [project]
 name = "stock-agent-orchestrator"
-environment = "formal"
-mode = "shadow"
+environment = "beta"
+mode = "active"
 
 [roles]
-owner = "xiaoc"
-data = "xiaozhi"
-analyst = "xiaoba"
+owner = "xiaoc-beta"
+data = "xiaozhi-beta"
+analyst = "xiaoba-beta"
 
 [automation]
 auto_advance_within_rules = true
@@ -17,14 +17,14 @@ require_user_review_for_new_rules = true
 candidate_list = "/path/to/candidate_list.md"
 seven_layer_reports = "/path/to/seven_layer_reports"
 entry_monitor_reports = "/path/to/entry_monitor_reports"
-sqlite_db = "./runtime/formal.db"
+sqlite_db = "./runtime/beta-live.db"
 
 [feishu]
 group_chat_id = "replace-me"
 owner_open_id = "replace-me"
 data_open_id = "replace-me"
 analyst_open_id = "replace-me"
-send_mode = "fake"
+send_mode = "live"
 api_base_url = "https://open.feishu.cn"
-app_id = ""
-app_secret = ""
+app_id = "replace-me"
+app_secret = "replace-me"

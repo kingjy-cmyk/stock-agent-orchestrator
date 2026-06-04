@@ -41,6 +41,10 @@ class FeishuConfig:
     owner_open_id: str
     data_open_id: str
     analyst_open_id: str
+    app_id: str = ""
+    app_secret: str = ""
+    api_base_url: str = "https://open.feishu.cn"
+    send_mode: str = "fake"
 
 
 @dataclass(frozen=True, slots=True)
@@ -60,7 +64,13 @@ class ConfigValidationIssue:
 
 
 REQUIRED_SECTIONS = ("project", "roles", "automation", "paths", "feishu")
-PLACEHOLDER_VALUES = {"", "replace-me", "/path/to/candidate_list.md", "/path/to/seven_layer_reports", "/path/to/entry_monitor_reports"}
+PLACEHOLDER_VALUES = {
+    "",
+    "replace-me",
+    "/path/to/candidate_list.md",
+    "/path/to/seven_layer_reports",
+    "/path/to/entry_monitor_reports",
+}
 
 
 def load_config(path: Path) -> OrchestratorConfig:
@@ -91,6 +101,20 @@ def validate_config(config: OrchestratorConfig) -> list[ConfigValidationIssue]:
         issues.append(
             ConfigValidationIssue("error", "automation.require_user_review_for_new_rules", "new rules must require user review")
         )
+    if config.feishu.send_mode not in {"fake", "live"}:
+        issues.append(ConfigValidationIssue("error", "feishu.send_mode", "must be fake or live"))
+    if config.feishu.send_mode == "live":
+        if config.project.environment != "beta":
+            issues.append(ConfigValidationIssue("error", "feishu.send_mode", "live send is only allowed for beta"))
+        if config.project.mode != "active":
+            issues.append(ConfigValidationIssue("error", "project.mode", "live send requires beta active mode"))
+        if (
+            not config.feishu.app_id.strip()
+            or not config.feishu.app_secret.strip()
+            or config.feishu.app_id.strip() in PLACEHOLDER_VALUES
+            or config.feishu.app_secret.strip() in PLACEHOLDER_VALUES
+        ):
+            issues.append(ConfigValidationIssue("error", "feishu.app_id", "live send requires app_id and app_secret"))
 
     fields = flatten_config(config)
     for field, value in fields.items():

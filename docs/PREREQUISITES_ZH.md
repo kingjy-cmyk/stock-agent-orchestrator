@@ -291,3 +291,12 @@ stock-agent-orchestrator beta-smoke --config configs/beta.example.toml
 ```
 
 这只会使用 `FakeFeishuClient` 记录发送请求，不会触达真实飞书群。
+
+真实发送还需要：
+
+- beta 群 `chat_id`
+- 小C-beta `open_id`
+- 飞书应用 `app_id`
+- 飞书应用 `app_secret`
+- 公网可访问的 callback URL
+- CLI 启动时显式加 `--allow-live-send`

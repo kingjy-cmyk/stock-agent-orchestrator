@@ -4,7 +4,15 @@ from dataclasses import dataclass
 
 from stock_agent_orchestrator.adapters.feishu_control import FeishuControlAdapter, FeishuEnvelope
 from stock_agent_orchestrator.config import OrchestratorConfig
-from stock_agent_orchestrator.connectors.feishu import FeishuClient, FeishuMessageEvent, SentFeishuMessage
+from stock_agent_orchestrator.connectors.feishu import (
+    ClientOperationGateway,
+    FeishuClient,
+    FeishuMessageEvent,
+    FeishuOperation,
+    FeishuOperationGateway,
+    FeishuOperationKind,
+    SentFeishuMessage,
+)
 from stock_agent_orchestrator.domain.models import Task
 from stock_agent_orchestrator.persistence.sqlite_store import SQLiteTaskStore
 from stock_agent_orchestrator.services.task_card import render_task_card_markdown
@@ -25,13 +33,16 @@ class BetaOrchestratorService:
         *,
         config: OrchestratorConfig,
         store: SQLiteTaskStore,
-        feishu_client: FeishuClient,
+        feishu_client: FeishuClient | None = None,
+        operation_gateway: FeishuOperationGateway | None = None,
         adapter: FeishuControlAdapter | None = None,
         engine: TaskEngine | None = None,
     ) -> None:
         self.config = config
         self.store = store
-        self.feishu_client = feishu_client
+        if operation_gateway is None and feishu_client is None:
+            raise ValueError("BetaOrchestratorService requires feishu_client or operation_gateway")
+        self.operation_gateway = operation_gateway or ClientOperationGateway(feishu_client)  # type: ignore[arg-type]
         self.adapter = adapter or FeishuControlAdapter()
         self.engine = engine or TaskEngine()
 
@@ -66,7 +77,16 @@ class BetaOrchestratorService:
             },
         )
         self.store.save_task(task)
-        sent = self.feishu_client.send_message(event.chat_id, render_task_card_markdown(task))
+        sent = self.operation_gateway.apply(
+            [
+                FeishuOperation(
+                    kind=FeishuOperationKind.SEND_CARD,
+                    chat_id=event.chat_id,
+                    text=render_task_card_markdown(task),
+                    metadata={"task_id": task.task_id},
+                )
+            ]
+        )[0]
         return BetaProcessResult(True, task_id=task.task_id, sent_message=sent)
 
     def _next_task_id(self) -> str:

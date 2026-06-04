@@ -120,6 +120,7 @@ def build_parser() -> argparse.ArgumentParser:
     run_webhook.add_argument("--host", default="127.0.0.1")
     run_webhook.add_argument("--port", type=int, default=8787)
     run_webhook.add_argument("--max-per-instance", type=int, default=1024)
+    run_webhook.add_argument("--allow-live-send", action="store_true")
 
     return parser
 
@@ -450,15 +451,17 @@ def main() -> None:
             port=args.port,
             config_path=Path(args.config),
             db_path=Path(args.db),
+            allow_live_send=args.allow_live_send,
             max_per_instance=args.max_per_instance,
         )
+        config = load_config(Path(args.config))
         print(json.dumps({
             "ok": True,
-            "mode": "fake-send",
+            "mode": "live-send" if config.feishu.send_mode == "live" and args.allow_live_send else "fake-send",
             "listen": f"http://{args.host}:{server.server_address[1]}",
             "webhook": f"http://{args.host}:{server.server_address[1]}/webhook",
             "healthz": f"http://{args.host}:{server.server_address[1]}/healthz",
-            "note": "Uses FakeFeishuClient; does not send to a real Feishu group yet.",
+            "note": "Live Feishu sending requires config feishu.send_mode=live and --allow-live-send.",
         }, ensure_ascii=False, indent=2))
         try:
             server.serve_forever()

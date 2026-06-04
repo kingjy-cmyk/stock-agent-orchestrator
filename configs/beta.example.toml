@@ -24,4 +24,7 @@ group_chat_id = "replace-me"
 owner_open_id = "replace-me"
 data_open_id = "replace-me"
 analyst_open_id = "replace-me"
-
+send_mode = "fake"
+api_base_url = "https://open.feishu.cn"
+app_id = ""
+app_secret = ""

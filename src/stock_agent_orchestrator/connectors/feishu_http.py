@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from stock_agent_orchestrator.config import OrchestratorConfig, load_config
-from stock_agent_orchestrator.connectors.feishu import FakeFeishuClient, FeishuClient
+from stock_agent_orchestrator.connectors.feishu import FeishuClient, build_operation_gateway
 from stock_agent_orchestrator.connectors.feishu_webhook import FeishuWebhookGateway, WebhookResult
 from stock_agent_orchestrator.persistence.sqlite_store import SQLiteTaskStore
 from stock_agent_orchestrator.services.beta_orchestrator import BetaOrchestratorService
@@ -79,15 +79,17 @@ def build_webhook_server(
     config: OrchestratorConfig,
     db_path: Path,
     feishu_client: FeishuClient | None = None,
+    allow_live_send: bool = False,
     max_per_instance: int = 1024,
 ) -> ThreadingHTTPServer:
-    client = feishu_client or FakeFeishuClient()
+    operation_gateway = None if feishu_client else build_operation_gateway(config.feishu, allow_live_send=allow_live_send)
     worker = ConnectorWorker(
         queue=BoundedIngressQueue(max_per_instance=max_per_instance),
         orchestrator=BetaOrchestratorService(
             config=config,
             store=SQLiteTaskStore(db_path),
-            feishu_client=client,
+            feishu_client=feishu_client,
+            operation_gateway=operation_gateway,
         ),
     )
     gateway = FeishuWebhookGateway(worker=worker)
@@ -105,6 +107,7 @@ def build_webhook_server_from_config(
     port: int,
     config_path: Path,
     db_path: Path,
+    allow_live_send: bool = False,
     max_per_instance: int = 1024,
 ) -> ThreadingHTTPServer:
     return build_webhook_server(
@@ -112,6 +115,7 @@ def build_webhook_server_from_config(
         port=port,
         config=load_config(config_path),
         db_path=db_path,
+        allow_live_send=allow_live_send,
         max_per_instance=max_per_instance,
     )
 

@@ -12,6 +12,8 @@ Codex 飞书通道里的关键模式是：
 - 入口要尽快 ack，避免飞书重投递或长时间阻塞。
 - 发送动作统一抽象成 operation，而不是业务层直接调用飞书 API。
 
+详细对标矩阵见：[Codex 飞书通道对标矩阵](CODEX_FEISHU_PARITY_ZH.md)。
+
 ## 本项目采用的简化模式
 
 ```text
@@ -21,7 +23,8 @@ Feishu Gateway
   -> BetaOrchestratorService
   -> TaskEngine / SQLite
   -> TaskCard
-  -> FeishuClient.send_message()
+  -> FeishuOperationGateway.apply()
+  -> FeishuClient
 ```
 
 ## 为什么要二进程/双层连接器
@@ -40,7 +43,10 @@ Feishu Gateway
 
 - `FeishuMessageEvent`：统一飞书消息事件。
 - `FeishuClient`：发送接口。
+- `FeishuOperation`：对标 Codex Operation 的发送操作抽象。
+- `FeishuOperationGateway`：对标 Codex Gateway.Apply 的操作应用接口。
 - `FakeFeishuClient`：测试用发送器。
+- `LiveFeishuClient`：真实飞书发送器，默认不启用。
 - `FeishuWebhookGateway`：本地 event callback gateway 骨架。
 - `run-webhook`：本地 HTTP webhook service。
 - `BetaOrchestratorService`：处理 beta 群消息并生成任务卡。
@@ -60,6 +66,24 @@ stock-agent-orchestrator run-webhook --config configs/beta.example.toml --host 1
 - `POST /webhook`
 
 当前仍使用 `FakeFeishuClient`，不会向真实飞书群发送消息。
+
+## 真实发送安全闸
+
+真实发送必须同时满足：
+
+- 配置里 `feishu.send_mode = "live"`
+- 配置里有真实 `app_id` / `app_secret`
+- CLI 显式传入 `--allow-live-send`
+- 项目环境是 `beta`
+- 项目模式是 `active`
+
+不满足任一条件，都不会向真实飞书群发送消息。
+
+示例：
+
+```bash
+stock-agent-orchestrator run-webhook --config configs/beta.live.example.toml --allow-live-send
+```
 
 ## 下一步真实接入
 
