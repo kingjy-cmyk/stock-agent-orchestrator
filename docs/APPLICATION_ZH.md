@@ -76,6 +76,22 @@
 - interactive card update 或至少追加回执。
 - 简短英文版项目摘要。
 
+## 当前完成度检查
+
+运行：
+
+```bash
+stock-agent-orchestrator application-readiness --format markdown
+```
+
+当前如果尚未生成真实 beta 验证报告，预期会停在 `80+` 档。
+
+进入 `90+` 档需要：
+
+- `docs/BETA_VALIDATION_REPORT_ZH.md`
+- beta 群任务卡截图或 GIF
+- `/healthz` 正常证据
+
 ## 可展示命令
 
 ```bash

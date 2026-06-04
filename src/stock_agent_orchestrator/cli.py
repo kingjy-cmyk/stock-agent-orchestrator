@@ -12,6 +12,11 @@ from stock_agent_orchestrator.connectors.feishu_http import build_webhook_server
 from stock_agent_orchestrator.connectors.feishu_webhook import FeishuWebhookGateway
 from stock_agent_orchestrator.domain.models import AgentRole, TaskIntent
 from stock_agent_orchestrator.persistence.sqlite_store import SQLiteTaskStore
+from stock_agent_orchestrator.services.application_readiness import (
+    readiness_report_to_dict,
+    readiness_report_to_markdown,
+    run_application_readiness,
+)
 from stock_agent_orchestrator.services.beta_live_preflight import (
     preflight_report_to_dict,
     preflight_report_to_markdown,
@@ -104,6 +109,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     validate_config_cmd = sub.add_parser("validate-config")
     validate_config_cmd.add_argument("--config", required=True)
+
+    app_readiness = sub.add_parser("application-readiness")
+    app_readiness.add_argument("--repo-root", default=".")
+    app_readiness.add_argument("--format", choices=["json", "markdown"], default="markdown")
 
     beta_live_preflight = sub.add_parser("beta-live-preflight")
     beta_live_preflight.add_argument("--config", default="configs/beta.live.toml")
@@ -321,6 +330,16 @@ def main() -> None:
         }, ensure_ascii=False, indent=2))
         if any(issue.severity == "error" for issue in issues):
             raise SystemExit(1)
+        return
+
+    if args.command == "application-readiness":
+        report = run_application_readiness(Path(args.repo_root))
+        rendered = (
+            readiness_report_to_markdown(report)
+            if args.format == "markdown"
+            else json.dumps(readiness_report_to_dict(report), ensure_ascii=False, indent=2)
+        )
+        print(rendered)
         return
 
     if args.command == "beta-live-preflight":

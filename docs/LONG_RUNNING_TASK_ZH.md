@@ -133,9 +133,11 @@ Stage 2B 剩余：
 已实现：
 
 - [申请材料草案](APPLICATION_ZH.md)
+- [申请完成度检查](APPLICATION_READINESS_ZH.md)
 - [演示脚本](DEMO_SCRIPT_ZH.md)
 - [飞书 Beta 验证报告模板](BETA_VALIDATION_REPORT_TEMPLATE_ZH.md)
 - `beta-validation-report` 命令
+- `application-readiness` 命令
 
 仍缺：
 
