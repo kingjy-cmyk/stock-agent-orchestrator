@@ -52,6 +52,7 @@ Feishu Gateway
 - `send_card`：发送带 `config.update_multi=true` 的飞书 interactive card。
 - `update_card`：通过 `message_id` 更新已发送的飞书 interactive card。
 - `FeishuWebhookGateway`：本地 event callback gateway 骨架。
+- `SQLiteGatewayStateStore`：持久化 gateway counters、去重 key 和 operation errors。
 - `run-webhook`：本地 HTTP webhook service。
 - `BetaOrchestratorService`：处理 beta 群消息并生成任务卡。
 - `BoundedIngressQueue`：按实例隔离的有界入口队列。
@@ -70,6 +71,15 @@ stock-agent-orchestrator run-webhook --config configs/beta.example.toml --host 1
 - `POST /webhook`
 
 当前仍使用 `FakeFeishuClient`，不会向真实飞书群发送消息。
+
+`run-webhook` 默认会把 gateway runtime state 写入同一个 SQLite db 文件：
+
+- accepted / enqueued / duplicate 计数。
+- operation error 计数和最后错误。
+- `event_id/message_id` 去重 key。
+- operation error 明细。
+
+因此服务重启后，已处理过的飞书事件仍可识别为重复事件。
 
 ## 真实发送安全闸
 
@@ -112,7 +122,8 @@ stock-agent-orchestrator beta-live-preflight --config configs/beta.live.toml --c
 
 ## 当前 beta 前安全能力
 
-- `FeishuWebhookGateway` 使用 `event_id/message_id` 做内存去重，重复事件会 accepted 但不会再次入队。
+- `FeishuWebhookGateway` 使用 `event_id/message_id` 做去重，重复事件会 accepted 但不会再次入队。
+- `run-webhook` 默认通过 `SQLiteGatewayStateStore` 持久化去重和 operation error，重启后不丢状态。
 - `/healthz` 暴露 `connected/degraded`、accepted、enqueued、duplicate、operation error 计数。
 - `GuardedOperationGateway` 会拒绝不在 `send_allowlist` 内的 chat_id。
 - `FeishuWebhookGateway` 会在配置 `verification_token` 后拒绝 token 不匹配的 callback。
@@ -139,7 +150,6 @@ PATCH /open-apis/im/v1/messages/:message_id
 
 当前限制：
 
-- 去重和错误记录是内存级，服务重启后会丢失。
 - 还没有飞书 encrypt key 解密和请求签名校验。
 - 还没有真正的 rate limit，只有限制入口队列长度。
 - interactive card update 已完成本地和请求形态测试，但还没有真实 beta 群验收证据。

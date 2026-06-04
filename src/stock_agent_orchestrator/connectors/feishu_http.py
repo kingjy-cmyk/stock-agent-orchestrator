@@ -9,6 +9,7 @@ from typing import Any
 from stock_agent_orchestrator.config import OrchestratorConfig, load_config
 from stock_agent_orchestrator.connectors.feishu import FeishuClient, build_operation_gateway
 from stock_agent_orchestrator.connectors.feishu_webhook import FeishuWebhookGateway, WebhookResult
+from stock_agent_orchestrator.persistence.gateway_state_store import SQLiteGatewayStateStore
 from stock_agent_orchestrator.persistence.sqlite_store import SQLiteTaskStore
 from stock_agent_orchestrator.services.beta_orchestrator import BetaOrchestratorService
 from stock_agent_orchestrator.services.connector_worker import ConnectorWorker
@@ -84,8 +85,12 @@ def build_webhook_server(
     feishu_client: FeishuClient | None = None,
     allow_live_send: bool = False,
     max_per_instance: int = 1024,
+    persist_gateway_state: bool = True,
 ) -> ThreadingHTTPServer:
-    gateway = FeishuWebhookGateway(verification_token=config.feishu.verification_token)
+    gateway = FeishuWebhookGateway(
+        verification_token=config.feishu.verification_token,
+        state_store=SQLiteGatewayStateStore(db_path) if persist_gateway_state else None,
+    )
     operation_gateway = (
         None
         if feishu_client

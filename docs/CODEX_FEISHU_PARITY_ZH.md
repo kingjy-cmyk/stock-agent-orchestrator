@@ -32,10 +32,10 @@
 | Send safety gate | 已完成 MVP | `send_mode=live` + `--allow-live-send` + `send_allowlist` | 后续补更细的 per-agent 权限 |
 | Card action callback | 未完成 | 无 | Stage 3 需要补 |
 | Interactive card update | 已完成 MVP | `SEND_CARD` 发送 updateable interactive card，`UPDATE_CARD` 通过 `message_id` 更新 | 待真实 beta 群验收 |
-| Message dedupe | 已完成 MVP | `FeishuWebhookGateway` 内存去重 | 后续补持久化，避免重启后丢状态 |
+| Message dedupe | 已完成 MVP | `FeishuWebhookGateway` + `SQLiteGatewayStateStore` 持久化去重 | 后续补 stale drop |
 | Rate limit | 未完成 | 仅队列上限 | 真实 beta 前必须补 |
 | Gateway state | 已完成 MVP | `/healthz` 暴露 `connected/degraded` 和计数 | 后续补 daemon 级心跳 |
-| Operation error 记录 | 已完成 MVP | `GuardedOperationGateway` + gateway error recorder | 后续补持久化错误表 |
+| Operation error 记录 | 已完成 MVP | `GuardedOperationGateway` + `SQLiteGatewayStateStore` 持久化错误表 | 后续补错误恢复策略 |
 | Multi app / multi gateway | 未完成 | 单 beta gateway | 后续视需要补 |
 | File/image/video | 不在 MVP | 无 | 非当前阶段 |
 
@@ -57,7 +57,13 @@
 - 飞书事件订阅配置
 - 飞书 encrypt key 解密 / 请求签名校验
 - rate limit 细化
-- 去重和错误记录持久化
+
+本轮补齐：
+
+- 去重 key 持久化
+- gateway counters 持久化
+- operation error 明细持久化
+- gateway 重启后重复事件不再入队
 
 Stage 3 已补：
 

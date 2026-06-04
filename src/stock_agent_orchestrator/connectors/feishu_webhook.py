@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from collections import deque
 from dataclasses import asdict, dataclass
-from typing import Any
+from typing import Any, Protocol
 
 from stock_agent_orchestrator.connectors.feishu import FeishuMessageEvent, FeishuOperationError, OperationErrorRecorder
 from stock_agent_orchestrator.services.connector_worker import ConnectorWorker, WorkerRunReport
@@ -29,6 +29,29 @@ class GatewayStateSnapshot:
     last_error: str = ""
 
 
+class GatewayStateStore(Protocol):
+    def init_db(self) -> None:
+        """Initialize gateway runtime state tables."""
+
+    def increment(self, instance_id: str, field: str, amount: int = 1) -> None:
+        """Increment a gateway counter."""
+
+    def set_last_error(self, instance_id: str, message: str) -> None:
+        """Persist the latest gateway error."""
+
+    def record_seen_key(self, instance_id: str, event_key: str, *, dedupe_window: int) -> bool:
+        """Return True when the event key was already seen."""
+
+    def record_operation_error(self, instance_id: str, error: FeishuOperationError) -> None:
+        """Persist a failed Feishu operation."""
+
+    def load_snapshot(self, instance_id: str) -> Any:
+        """Load persisted gateway counters."""
+
+    def list_operation_errors(self, instance_id: str) -> list[FeishuOperationError]:
+        """Load persisted operation errors."""
+
+
 class FeishuWebhookGateway(OperationErrorRecorder):
     """Minimal Feishu event-callback gateway.
 
@@ -43,11 +66,15 @@ class FeishuWebhookGateway(OperationErrorRecorder):
         instance_id: str = "beta",
         dedupe_window: int = 2048,
         verification_token: str = "",
+        state_store: GatewayStateStore | None = None,
     ) -> None:
         self.worker = worker
         self.instance_id = instance_id
         self.dedupe_window = dedupe_window
         self.verification_token = verification_token.strip()
+        self.state_store = state_store
+        if self.state_store is not None:
+            self.state_store.init_db()
         self._seen_keys: set[str] = set()
         self._seen_order: deque[str] = deque()
         self._accepted_count = 0
@@ -58,30 +85,30 @@ class FeishuWebhookGateway(OperationErrorRecorder):
 
     def handle_payload(self, payload: dict[str, Any], *, drain: bool = False) -> WebhookResult:
         if self.worker is None:
-            self._last_error = "worker_not_attached"
+            self._set_last_error("worker_not_attached")
             return WebhookResult(False, reason="worker_not_attached")
 
         if not self._token_is_valid(payload):
-            self._last_error = "invalid_verification_token"
+            self._set_last_error("invalid_verification_token")
             return WebhookResult(False, reason="invalid_verification_token")
 
         challenge = str(payload.get("challenge") or "").strip()
         if challenge:
-            self._accepted_count += 1
+            self._increment("accepted_count")
             return WebhookResult(True, challenge=challenge, reason="url_verification")
 
         event = parse_message_event(payload)
         if event is None:
-            self._last_error = "unsupported_payload"
+            self._set_last_error("unsupported_payload")
             return WebhookResult(False, reason="unsupported_payload")
 
-        self._accepted_count += 1
+        self._increment("accepted_count")
         if self._is_duplicate(event):
-            self._duplicate_count += 1
+            self._increment("duplicate_count")
             return WebhookResult(True, enqueued=False, reason="duplicate_event")
 
         self.worker.enqueue(IngressItem(self.instance_id, event))
-        self._enqueued_count += 1
+        self._increment("enqueued_count")
         report = self.worker.drain_once() if drain else None
         return WebhookResult(True, enqueued=True, worker_report=report)
 
@@ -89,10 +116,24 @@ class FeishuWebhookGateway(OperationErrorRecorder):
         self.worker = worker
 
     def record_operation_error(self, error: FeishuOperationError) -> None:
+        if self.state_store is not None:
+            self.state_store.record_operation_error(self.instance_id, error)
+            return
         self._operation_errors.append(error)
         self._last_error = error.message
 
     def state_snapshot(self) -> GatewayStateSnapshot:
+        if self.state_store is not None:
+            row = self.state_store.load_snapshot(self.instance_id)
+            status = "degraded" if row.last_error else "connected"
+            return GatewayStateSnapshot(
+                status=status,
+                accepted_count=row.accepted_count,
+                enqueued_count=row.enqueued_count,
+                duplicate_count=row.duplicate_count,
+                operation_error_count=row.operation_error_count,
+                last_error=row.last_error,
+            )
         status = "connected"
         if self._last_error:
             status = "degraded"
@@ -109,12 +150,16 @@ class FeishuWebhookGateway(OperationErrorRecorder):
         return asdict(self.state_snapshot())
 
     def operation_errors(self) -> list[FeishuOperationError]:
+        if self.state_store is not None:
+            return self.state_store.list_operation_errors(self.instance_id)
         return list(self._operation_errors)
 
     def _is_duplicate(self, event: FeishuMessageEvent) -> bool:
         key = event.event_id or event.message_id
         if not key:
             return False
+        if self.state_store is not None:
+            return self.state_store.record_seen_key(self.instance_id, key, dedupe_window=self.dedupe_window)
         if key in self._seen_keys:
             return True
         self._seen_keys.add(key)
@@ -128,6 +173,25 @@ class FeishuWebhookGateway(OperationErrorRecorder):
         if not self.verification_token:
             return True
         return str(payload.get("token") or "").strip() == self.verification_token
+
+    def _increment(self, field: str) -> None:
+        if self.state_store is not None:
+            self.state_store.increment(self.instance_id, field)
+            return
+        if field == "accepted_count":
+            self._accepted_count += 1
+        elif field == "enqueued_count":
+            self._enqueued_count += 1
+        elif field == "duplicate_count":
+            self._duplicate_count += 1
+        else:
+            raise ValueError(f"unsupported in-memory gateway counter: {field}")
+
+    def _set_last_error(self, message: str) -> None:
+        if self.state_store is not None:
+            self.state_store.set_last_error(self.instance_id, message)
+            return
+        self._last_error = message
 
 
 def parse_message_event(payload: dict[str, Any]) -> FeishuMessageEvent | None:

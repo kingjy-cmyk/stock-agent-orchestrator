@@ -3,8 +3,9 @@ import unittest
 from pathlib import Path
 
 from stock_agent_orchestrator.config import load_config
-from stock_agent_orchestrator.connectors.feishu import FakeFeishuClient
+from stock_agent_orchestrator.connectors.feishu import FakeFeishuClient, FeishuOperationError
 from stock_agent_orchestrator.connectors.feishu_webhook import FeishuWebhookGateway, parse_message_event
+from stock_agent_orchestrator.persistence.gateway_state_store import SQLiteGatewayStateStore
 from stock_agent_orchestrator.persistence.sqlite_store import SQLiteTaskStore
 from stock_agent_orchestrator.services.beta_orchestrator import BetaOrchestratorService
 from stock_agent_orchestrator.services.connector_worker import ConnectorWorker
@@ -89,6 +90,60 @@ class FeishuWebhookTests(unittest.TestCase):
             self.assertEqual(second.reason, "duplicate_event")
             self.assertEqual(len(client.sent_messages), 1)
             self.assertEqual(gateway.state_snapshot().duplicate_count, 1)
+
+    def test_persistent_dedupe_survives_gateway_restart(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            db_path = Path(tmp) / "beta.db"
+            first_client = FakeFeishuClient()
+            first_gateway = FeishuWebhookGateway(
+                worker=self._worker(tmp, first_client),
+                state_store=SQLiteGatewayStateStore(db_path),
+            )
+
+            first = first_gateway.handle_payload(payload(), drain=True)
+
+            second_client = FakeFeishuClient()
+            second_gateway = FeishuWebhookGateway(
+                worker=self._worker(tmp, second_client),
+                state_store=SQLiteGatewayStateStore(db_path),
+            )
+            second = second_gateway.handle_payload(payload(), drain=True)
+
+            self.assertTrue(first.enqueued)
+            self.assertTrue(second.accepted)
+            self.assertFalse(second.enqueued)
+            self.assertEqual(second.reason, "duplicate_event")
+            self.assertEqual(len(first_client.sent_messages), 1)
+            self.assertEqual(len(second_client.sent_messages), 0)
+            snapshot = second_gateway.state_snapshot()
+            self.assertEqual(snapshot.accepted_count, 2)
+            self.assertEqual(snapshot.enqueued_count, 1)
+            self.assertEqual(snapshot.duplicate_count, 1)
+
+    def test_persistent_operation_errors_survive_gateway_restart(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            db_path = Path(tmp) / "beta.db"
+            gateway = FeishuWebhookGateway(
+                worker=self._worker(tmp),
+                state_store=SQLiteGatewayStateStore(db_path),
+            )
+            gateway.record_operation_error(
+                FeishuOperationError(
+                    kind="send_card",
+                    chat_id="replace-me",
+                    task_id="BETA-0001",
+                    message="send failed",
+                )
+            )
+
+            restarted = FeishuWebhookGateway(
+                worker=self._worker(tmp),
+                state_store=SQLiteGatewayStateStore(db_path),
+            )
+
+            self.assertEqual(restarted.state_snapshot().operation_error_count, 1)
+            self.assertEqual(restarted.state_snapshot().status, "degraded")
+            self.assertEqual(restarted.operation_errors()[0].task_id, "BETA-0001")
 
     def _worker(self, tmp, client=None) -> ConnectorWorker:
         if hasattr(tmp, "name"):
