@@ -185,6 +185,12 @@ Render the task card that will later be sent into Feishu:
 stock-agent-orchestrator render-task-card --task-id TASK-0001
 ```
 
+Run a fake beta Feishu connector smoke test without touching a real group:
+
+```bash
+stock-agent-orchestrator beta-smoke --config configs/beta.example.toml
+```
+
 Supported sample formats:
 
 - `.jsonl`: one JSON object per line with `sender_name`, `text`, optional `created_at`, optional `mentions_owner`
@@ -193,9 +199,10 @@ Supported sample formats:
 ## Rollout Plan
 
 1. local preflight only: install, doctor, demo
-2. read-only Feishu Shadow Mode: observe messages and build task state without speaking
-3. active Feishu beta group with `小C-beta / 小智-beta / 小巴-beta`
-4. gradual promotion of the new task-owner logic into the current `小C`
+2. fake Feishu connector smoke: message event -> task -> task card send request
+3. read-only Feishu Shadow Mode: observe messages and build task state without speaking
+4. active Feishu beta group with `小C-beta / 小智-beta / 小巴-beta`
+5. gradual promotion of the new task-owner logic into the current `小C`
 
 ## What To Read Next
 

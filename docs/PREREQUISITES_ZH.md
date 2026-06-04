@@ -283,3 +283,11 @@
 ```bash
 stock-agent-orchestrator validate-config --config configs/beta.example.toml
 ```
+
+也可以先跑 fake 飞书连接器 smoke test：
+
+```bash
+stock-agent-orchestrator beta-smoke --config configs/beta.example.toml
+```
+
+这只会使用 `FakeFeishuClient` 记录发送请求，不会触达真实飞书群。

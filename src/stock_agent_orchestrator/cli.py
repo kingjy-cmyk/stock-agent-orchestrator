@@ -7,8 +7,10 @@ from pathlib import Path
 
 from stock_agent_orchestrator.bridges.current_stack import CurrentStackBridge
 from stock_agent_orchestrator.config import config_to_dict, load_config, validate_config, validation_to_dict
+from stock_agent_orchestrator.connectors.feishu import FakeFeishuClient, FeishuMessageEvent
 from stock_agent_orchestrator.domain.models import AgentRole, TaskIntent
 from stock_agent_orchestrator.persistence.sqlite_store import SQLiteTaskStore
+from stock_agent_orchestrator.services.beta_orchestrator import BetaOrchestratorService
 from stock_agent_orchestrator.services.demo import write_demo_sample
 from stock_agent_orchestrator.services.doctor import doctor_report_to_dict, run_doctor
 from stock_agent_orchestrator.services.rule_memory import RuleMemoryService
@@ -92,6 +94,11 @@ def build_parser() -> argparse.ArgumentParser:
     render_card.add_argument("--db", default=str(DEFAULT_DB))
     render_card.add_argument("--task-id", required=True)
     render_card.add_argument("--format", choices=["json", "markdown"], default="markdown")
+
+    beta_smoke = sub.add_parser("beta-smoke")
+    beta_smoke.add_argument("--config", default="configs/beta.example.toml")
+    beta_smoke.add_argument("--db", default=".runtime/beta-smoke.db")
+    beta_smoke.add_argument("--text", default="@小C-beta 今天先给我一份候选池")
 
     return parser
 
@@ -273,6 +280,36 @@ def main() -> None:
                 "task_id": task.task_id,
                 "card_markdown": render_task_card_markdown(task),
             }, ensure_ascii=False, indent=2))
+        return
+
+    if args.command == "beta-smoke":
+        config = load_config(Path(args.config))
+        store = SQLiteTaskStore(Path(args.db))
+        client = FakeFeishuClient()
+        result = BetaOrchestratorService(config=config, store=store, feishu_client=client).process_message(
+            FeishuMessageEvent(
+                event_id="smoke-event-1",
+                chat_id=config.feishu.group_chat_id,
+                sender_open_id="smoke-user",
+                sender_name="BOOS",
+                text=args.text,
+                mentions=(config.feishu.owner_open_id,),
+                message_id="smoke-message-1",
+            )
+        )
+        print(json.dumps({
+            "handled": result.handled,
+            "task_id": result.task_id,
+            "reason": result.reason,
+            "sent_messages": [
+                {
+                    "chat_id": message.chat_id,
+                    "message_id": message.message_id,
+                    "text": message.text,
+                }
+                for message in client.sent_messages
+            ],
+        }, ensure_ascii=False, indent=2))
         return
 
 

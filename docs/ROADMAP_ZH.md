@@ -121,12 +121,33 @@
 - 禁止 formal 环境默认 active 模式
 - placeholder 配置会给 warning
 - `render-task-card` 输出飞书任务卡 markdown 草案
+- `FakeFeishuClient` 可记录发送请求
+- `BetaOrchestratorService` 可处理 beta 群消息事件
+- `beta-smoke` 可演示 fake 飞书消息创建任务并生成任务卡
 
 验收标准：
 
 - beta 配置无 error
 - formal active 配置会被拒绝
 - 本地任务能渲染为包含任务 ID、状态、责任人、下一步、审批状态、证据的任务卡
+- fake beta 消息能创建任务并生成任务卡发送请求
+
+### Phase 1B：真实 Feishu Connector MVP
+
+当前状态：`待开始`
+
+目标：
+
+- 在 beta 群接入真实飞书消息输入
+- 在 beta 群发送任务卡
+- 仍不碰正式群
+
+验收标准：
+
+- beta 群 @小C-beta 后，真实群里出现任务卡
+- 非 beta 群消息被忽略
+- formal 配置不能 active 发送
+- 任务状态保存到 SQLite
 
 验收标准：
 

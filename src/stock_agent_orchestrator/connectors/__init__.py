@@ -1,0 +1,1 @@
+"""External platform connector contracts."""
