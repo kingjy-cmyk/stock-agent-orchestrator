@@ -312,6 +312,12 @@ To generate the ignored live config from environment variables:
 stock-agent-orchestrator beta-live-env-template --shell powershell
 ```
 
+For the current Windows + WSL OpenClaw workstation, prefill known local paths:
+
+```bash
+stock-agent-orchestrator beta-live-env-template --shell powershell --use-local-defaults
+```
+
 ```bash
 stock-agent-orchestrator beta-live-config-from-env --output configs/beta.live.toml --overwrite --format markdown
 ```

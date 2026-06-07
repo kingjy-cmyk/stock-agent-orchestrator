@@ -25,6 +25,12 @@ stock-agent-orchestrator beta-live-intake-checklist --shell powershell --format 
 stock-agent-orchestrator beta-live-env-template --shell powershell
 ```
 
+如果在当前 Windows + WSL OpenClaw 工作机上运行，可以预填已确认的候选池路径，并把报告/数据库落到本仓库已忽略的 `.runtime`：
+
+```bash
+stock-agent-orchestrator beta-live-env-template --shell powershell --use-local-defaults
+```
+
 默认事件接入模式是：
 
 ```powershell

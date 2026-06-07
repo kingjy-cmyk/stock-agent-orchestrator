@@ -62,6 +62,10 @@ stock-agent-orchestrator beta-live-env-template --shell powershell
 ```
 
 ```bash
+stock-agent-orchestrator beta-live-env-template --shell powershell --use-local-defaults
+```
+
+```bash
 stock-agent-orchestrator beta-live-config-from-env --output configs/beta.live.toml --overwrite --format markdown
 ```
 

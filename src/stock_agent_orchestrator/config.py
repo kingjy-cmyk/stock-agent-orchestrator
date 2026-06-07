@@ -73,8 +73,21 @@ PLACEHOLDER_VALUES = {
     "",
     "replace-me",
     "/path/to/candidate_list.md",
+    "/path/to/seven_layer",
     "/path/to/seven_layer_reports",
+    "/path/to/entry_monitor",
     "/path/to/entry_monitor_reports",
+    "C:\\path\\to\\candidate_list.md",
+    "C:\\path\\to\\seven_layer",
+    "C:\\path\\to\\entry_monitor",
+    "oc_xxx",
+    "ou_xiaoc_beta",
+    "ou_xiaozhi_beta",
+    "ou_xiaoba_beta",
+    "cli_xxx",
+    "<secret>",
+    "<token>",
+    "<encrypt-key>",
 }
 
 

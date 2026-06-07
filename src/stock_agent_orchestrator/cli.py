@@ -221,6 +221,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     beta_live_env_template = sub.add_parser("beta-live-env-template")
     beta_live_env_template.add_argument("--shell", choices=["powershell", "bash"], default="powershell")
+    beta_live_env_template.add_argument("--use-local-defaults", action="store_true")
 
     beta_live_config_status = sub.add_parser("beta-live-config-status")
     beta_live_config_status.add_argument("--repo-root", default=".")
@@ -611,7 +612,7 @@ def main() -> None:
         return
 
     if args.command == "beta-live-env-template":
-        print(render_beta_live_env_template(shell=args.shell))
+        print(render_beta_live_env_template(shell=args.shell, use_local_defaults=args.use_local_defaults))
         return
 
     if args.command == "beta-live-config-status":

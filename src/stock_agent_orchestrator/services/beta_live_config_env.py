@@ -44,6 +44,19 @@ ENV_DEFAULTS = {
     "FEISHU_WEBHOOK_RATE_LIMIT_PER_MINUTE": "60",
 }
 
+LOCAL_ENV_DEFAULTS = {
+    **ENV_DEFAULTS,
+    "STOCK_AGENT_CANDIDATE_LIST": "\\\\wsl.localhost\\Ubuntu\\home\\jy95\\.openclaw\\evolution\\shared\\recurring\\candidate_list.md",
+    "STOCK_AGENT_SEVEN_LAYER_REPORTS": ".runtime/beta-live/seven_layer",
+    "STOCK_AGENT_ENTRY_MONITOR_REPORTS": ".runtime/beta-live/entry_monitor",
+    "STOCK_AGENT_SQLITE_DB": ".runtime/beta-live.db",
+}
+
+BASH_LOCAL_ENV_DEFAULTS = {
+    **LOCAL_ENV_DEFAULTS,
+    "STOCK_AGENT_CANDIDATE_LIST": "/home/jy95/.openclaw/evolution/shared/recurring/candidate_list.md",
+}
+
 
 @dataclass(frozen=True, slots=True)
 class BetaLiveConfigFromEnvResult:
@@ -152,21 +165,31 @@ def beta_live_config_from_env_to_markdown(result: BetaLiveConfigFromEnvResult) -
     return "\n".join(lines)
 
 
-def render_beta_live_env_template(*, shell: str = "powershell") -> str:
+def render_beta_live_env_template(*, shell: str = "powershell", use_local_defaults: bool = False) -> str:
     normalized = shell.strip().lower()
     if normalized not in {"powershell", "bash"}:
         raise ValueError("shell must be powershell or bash")
+    defaults = _env_defaults(shell=normalized, use_local_defaults=use_local_defaults)
     lines = [
         "# Fill these values, then run:",
         "# stock-agent-orchestrator beta-live-config-from-env --output configs/beta.live.toml --overwrite --format markdown",
         "",
     ]
+    if use_local_defaults:
+        lines.extend(
+            [
+                "# Local defaults enabled:",
+                "# - candidate_list points to the current OpenClaw shared recurring file.",
+                "# - report and database paths point to this repo's ignored .runtime directory.",
+                "",
+            ]
+        )
     for _field, env_name in ENV_FIELDS:
-        lines.append(_env_line(shell=normalized, env_name=env_name, value=ENV_DEFAULTS[env_name]))
-    lines.append(_env_line(shell=normalized, env_name="FEISHU_EVENT_MODE", value=ENV_DEFAULTS["FEISHU_EVENT_MODE"]))
-    lines.append(_env_line(shell=normalized, env_name="FEISHU_VERIFICATION_TOKEN", value=ENV_DEFAULTS["FEISHU_VERIFICATION_TOKEN"]))
-    lines.append(_env_line(shell=normalized, env_name="FEISHU_ENCRYPT_KEY", value=ENV_DEFAULTS["FEISHU_ENCRYPT_KEY"]))
-    lines.append(_env_line(shell=normalized, env_name="FEISHU_WEBHOOK_RATE_LIMIT_PER_MINUTE", value=ENV_DEFAULTS["FEISHU_WEBHOOK_RATE_LIMIT_PER_MINUTE"]))
+        lines.append(_env_line(shell=normalized, env_name=env_name, value=defaults[env_name]))
+    lines.append(_env_line(shell=normalized, env_name="FEISHU_EVENT_MODE", value=defaults["FEISHU_EVENT_MODE"]))
+    lines.append(_env_line(shell=normalized, env_name="FEISHU_VERIFICATION_TOKEN", value=defaults["FEISHU_VERIFICATION_TOKEN"]))
+    lines.append(_env_line(shell=normalized, env_name="FEISHU_ENCRYPT_KEY", value=defaults["FEISHU_ENCRYPT_KEY"]))
+    lines.append(_env_line(shell=normalized, env_name="FEISHU_WEBHOOK_RATE_LIMIT_PER_MINUTE", value=defaults["FEISHU_WEBHOOK_RATE_LIMIT_PER_MINUTE"]))
     return "\n".join(lines)
 
 
@@ -223,10 +246,24 @@ def _toml_escape(value: str) -> str:
 
 
 def _env_line(*, shell: str, env_name: str, value: str) -> str:
-    escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+    escaped = _shell_escape(value=value, shell=shell)
     if shell == "powershell":
         return f'$env:{env_name}="{escaped}"'
     return f'export {env_name}="{escaped}"'
+
+
+def _env_defaults(*, shell: str, use_local_defaults: bool) -> Mapping[str, str]:
+    if not use_local_defaults:
+        return ENV_DEFAULTS
+    if shell == "bash":
+        return BASH_LOCAL_ENV_DEFAULTS
+    return LOCAL_ENV_DEFAULTS
+
+
+def _shell_escape(*, value: str, shell: str) -> str:
+    if shell == "powershell":
+        return value.replace("`", "``").replace('"', '`"')
+    return value.replace("\\", "\\\\").replace('"', '\\"').replace("$", "\\$").replace("`", "\\`")
 
 
 def _next_steps(*, written: bool) -> list[str]:

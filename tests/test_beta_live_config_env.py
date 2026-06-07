@@ -4,6 +4,7 @@ from pathlib import Path
 
 from stock_agent_orchestrator.config import load_config
 from stock_agent_orchestrator.services.beta_live_config_env import (
+    ENV_DEFAULTS,
     beta_live_config_from_env_to_markdown,
     render_beta_live_env_template,
     write_beta_live_config_from_env,
@@ -68,6 +69,22 @@ class BetaLiveConfigFromEnvTests(unittest.TestCase):
             self.assertNotIn("verify-token-secret", rendered)
             self.assertNotIn("encrypt-key-secret", rendered)
 
+    def test_template_placeholders_do_not_mark_config_ready_for_preflight(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            output = tmp_path / "configs" / "beta.live.toml"
+            (tmp_path / ".gitignore").write_text("configs/beta.live.toml\n", encoding="utf-8")
+
+            result = write_beta_live_config_from_env(
+                output_path=output,
+                repo_root=tmp_path,
+                env=ENV_DEFAULTS,
+                overwrite=True,
+            )
+
+            self.assertTrue(result.written)
+            self.assertFalse(result.ready_for_preflight)
+
     def test_renders_powershell_env_template(self) -> None:
         rendered = render_beta_live_env_template(shell="powershell")
 
@@ -75,6 +92,7 @@ class BetaLiveConfigFromEnvTests(unittest.TestCase):
         self.assertIn("$env:FEISHU_APP_SECRET", rendered)
         self.assertIn("$env:FEISHU_EVENT_MODE", rendered)
         self.assertIn("beta-live-config-from-env", rendered)
+        self.assertIn('C:\\path\\to\\candidate_list.md', rendered)
 
     def test_renders_bash_env_template(self) -> None:
         rendered = render_beta_live_env_template(shell="bash")
@@ -83,6 +101,21 @@ class BetaLiveConfigFromEnvTests(unittest.TestCase):
         self.assertIn("export FEISHU_APP_SECRET", rendered)
         self.assertIn("export FEISHU_EVENT_MODE", rendered)
         self.assertIn("beta-live-config-from-env", rendered)
+
+    def test_renders_powershell_env_template_with_local_defaults(self) -> None:
+        rendered = render_beta_live_env_template(shell="powershell", use_local_defaults=True)
+
+        self.assertIn("Local defaults enabled", rendered)
+        self.assertIn("\\\\wsl.localhost\\Ubuntu\\home\\jy95\\.openclaw", rendered)
+        self.assertIn(".runtime/beta-live/seven_layer", rendered)
+        self.assertIn(".runtime/beta-live.db", rendered)
+
+    def test_renders_bash_env_template_with_local_defaults(self) -> None:
+        rendered = render_beta_live_env_template(shell="bash", use_local_defaults=True)
+
+        self.assertIn("export STOCK_AGENT_CANDIDATE_LIST", rendered)
+        self.assertIn("/home/jy95/.openclaw/evolution/shared/recurring/candidate_list.md", rendered)
+        self.assertIn(".runtime/beta-live/entry_monitor", rendered)
 
     def _env(self) -> dict[str, str]:
         return {
