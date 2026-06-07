@@ -72,7 +72,7 @@ Current status:
 
 - local install/demo/smoke paths are documented
 - Feishu connector has a safe beta preflight gate
-- 135 unit tests pass locally
+- 138 unit tests pass locally
 - real Feishu beta validation is still pending
 
 Current readiness can be checked by command:
