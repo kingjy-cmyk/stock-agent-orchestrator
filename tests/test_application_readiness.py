@@ -9,13 +9,13 @@ from stock_agent_orchestrator.services.application_readiness import (
 
 
 class ApplicationReadinessTests(unittest.TestCase):
-    def test_current_repo_is_application_ready_but_missing_beta_evidence(self) -> None:
+    def test_current_repo_is_ready_with_beta_evidence(self) -> None:
         report = run_application_readiness(Path("."))
 
-        self.assertEqual(report.score, 82)
+        self.assertEqual(report.score, 100)
         self.assertEqual(report.max_score, 100)
-        self.assertEqual(report.band, "application_ready_but_needs_beta_evidence")
-        self.assertTrue(any("BETA_VALIDATION_REPORT_ZH.md" in blocker for blocker in report.blockers))
+        self.assertEqual(report.band, "ready_with_evidence")
+        self.assertEqual(report.blockers, [])
 
     def test_repo_with_beta_validation_report_is_ready_with_evidence(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

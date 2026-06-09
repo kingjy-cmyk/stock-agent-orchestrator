@@ -49,11 +49,10 @@ dry-run 不连接飞书，只验证：
 - 配置层支持 `callback` / `long_connection`。
 - long_connection preflight 不再要求公网 callback。
 - `run-long-connection --dry-run` 已接入现有 gateway/worker/operation 架构。
+- `run-long-connection` 已接入 `lark-oapi` 长链接 SDK，并把 `im.message.receive_v1` 事件转交给 `FeishuLongConnectionRuntime.handle_event_payload()`。
 - final gate 在长链接模式下跳过公网 callback deploy plan。
 
-仍待真实 beta 前完成：
+仍待真实 beta 完成：
 
-- 安装并确认飞书长链接 SDK，例如 `lark-oapi`。
-- 把 SDK 收到的消息事件绑定到 `FeishuLongConnectionRuntime.handle_event_payload()`。
 - 在临时 beta 群实测任务卡创建和更新。
 - 生成 `docs/BETA_VALIDATION_REPORT_ZH.md`。

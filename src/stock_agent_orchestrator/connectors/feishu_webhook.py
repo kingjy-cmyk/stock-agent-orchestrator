@@ -242,6 +242,8 @@ def parse_message_event(payload: dict[str, Any]) -> FeishuMessageEvent | None:
         or event.get("sender_open_id")
         or sender_id.get("open_id")
         or sender_id.get("user_id")
+        or sender_id.get("app_id")
+        or sender.get("id")
         or ""
     ).strip()
     sender_name = str(message.get("sender_name") or event.get("sender_name") or event.get("operator_name") or "用户").strip()
@@ -286,7 +288,7 @@ def extract_mentions(message: dict[str, Any]) -> list[str]:
         if not isinstance(item, dict):
             continue
         mention_id = item.get("id") if isinstance(item.get("id"), dict) else {}
-        for key in ("open_id", "user_id", "union_id"):
+        for key in ("open_id", "user_id", "union_id", "app_id"):
             value = str(item.get(key) or mention_id.get(key) or "").strip()
             if value:
                 values.append(value)

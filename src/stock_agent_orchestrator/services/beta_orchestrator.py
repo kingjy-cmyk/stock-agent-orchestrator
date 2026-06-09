@@ -134,9 +134,19 @@ class BetaOrchestratorService:
 
     def _agent_actor(self, sender_open_id: str) -> AgentRole | None:
         sender = sender_open_id.strip()
-        if sender == self.config.feishu.data_open_id.strip():
+        data_ids = {
+            self.config.feishu.data_open_id.strip(),
+            self.config.feishu.data_app_id.strip(),
+            *[value.strip() for value in self.config.feishu.data_sender_ids],
+        }
+        analyst_ids = {
+            self.config.feishu.analyst_open_id.strip(),
+            self.config.feishu.analyst_app_id.strip(),
+            *[value.strip() for value in self.config.feishu.analyst_sender_ids],
+        }
+        if sender and sender in data_ids:
             return AgentRole.XIAOZHI
-        if sender == self.config.feishu.analyst_open_id.strip():
+        if sender and sender in analyst_ids:
             return AgentRole.XIAOBA
         return None
 

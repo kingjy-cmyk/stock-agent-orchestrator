@@ -126,7 +126,7 @@ event_mode = "long_connection"
 stock-agent-orchestrator run-long-connection --config configs/beta.live.toml --db .runtime/long-connection.db --dry-run --format markdown
 ```
 
-当前 `run-long-connection --dry-run` 已能验证配置和 gateway/worker/state store 初始化。真实运行还需要安装并接入飞书长链接 SDK，将 SDK 收到的事件转交给 `FeishuLongConnectionRuntime.handle_event_payload()`。
+当前 `run-long-connection --dry-run` 已能验证配置和 gateway/worker/state store 初始化。真实运行已接入飞书长链接 SDK，将 SDK 收到的 `im.message.receive_v1` 事件转交给 `FeishuLongConnectionRuntime.handle_event_payload()`。
 
 详细步骤见：[飞书 Beta Live Preflight](BETA_LIVE_PREFLIGHT_ZH.md)。
 

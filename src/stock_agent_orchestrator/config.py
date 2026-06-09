@@ -41,6 +41,10 @@ class FeishuConfig:
     owner_open_id: str
     data_open_id: str
     analyst_open_id: str
+    data_sender_ids: list[str] = field(default_factory=list)
+    analyst_sender_ids: list[str] = field(default_factory=list)
+    data_app_id: str = ""
+    analyst_app_id: str = ""
     app_id: str = ""
     app_secret: str = ""
     api_base_url: str = "https://open.feishu.cn"

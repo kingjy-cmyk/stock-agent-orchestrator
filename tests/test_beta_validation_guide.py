@@ -24,7 +24,7 @@ class BetaValidationGuideTests(unittest.TestCase):
         self.assertFalse(any("--allow-live-send" in command for command in guide.commands))
         self.assertTrue(any("不要启动 --allow-live-send" in item for item in guide.checklist))
 
-    def test_guide_outputs_live_beta_evidence_commands_when_preflight_passes(self) -> None:
+    def test_guide_reviews_existing_beta_evidence_when_report_exists(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             tmp_path = Path(tmp)
             config_path = tmp_path / "beta.live.toml"
@@ -42,10 +42,31 @@ class BetaValidationGuideTests(unittest.TestCase):
 
             self.assertTrue(guide.ready_for_live_beta)
             self.assertTrue(guide.preflight_ok)
-            self.assertEqual(guide.stage, "run_live_beta_and_collect_evidence")
+            self.assertEqual(guide.stage, "review_existing_beta_evidence")
             self.assertIn("https://agent-beta.example.com/webhook", guide.webhook_url)
             self.assertTrue(any("collect-beta-evidence" in command for command in guide.commands))
             self.assertTrue(any("BETA_VALIDATION_REPORT_ZH.md" in command for command in guide.commands))
+
+    def test_guide_outputs_live_beta_evidence_commands_when_report_is_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            config_path = tmp_path / "beta.live.toml"
+            config_path.write_text(self._valid_config(), encoding="utf-8")
+
+            guide = build_beta_validation_guide(
+                config=load_config(config_path),
+                callback_url="https://agent-beta.example.com",
+                repo_root=tmp_path,
+                config_path=str(config_path),
+                db_path=".runtime/beta-live.db",
+                healthz_json_path=".runtime/healthz.json",
+                report_path="docs/BETA_VALIDATION_REPORT_ZH.md",
+            )
+
+            self.assertTrue(guide.ready_for_live_beta)
+            self.assertTrue(guide.preflight_ok)
+            self.assertEqual(guide.stage, "run_live_beta_and_collect_evidence")
+            self.assertTrue(guide.missing_evidence_report)
 
     def test_markdown_contains_checklist_commands_and_evidence(self) -> None:
         guide = build_beta_validation_guide(

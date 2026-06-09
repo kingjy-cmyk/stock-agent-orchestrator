@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
@@ -53,6 +54,7 @@ class FeishuLongConnectionRuntime:
         self.gateway.attach_worker(worker)
 
     def handle_event_payload(self, payload: dict[str, Any], *, drain: bool = True) -> WebhookResult:
+        _append_event_audit(payload, self.db_path)
         return self.gateway.handle_payload(payload, drain=drain)
 
     def state_dict(self) -> dict[str, Any]:
@@ -61,7 +63,8 @@ class FeishuLongConnectionRuntime:
     def start(self) -> None:
         if not long_connection_sdk_available():
             raise RuntimeError("Feishu long connection SDK is not installed; install lark-oapi before running live long_connection ingress")
-        raise RuntimeError("Feishu long connection SDK adapter wiring is not implemented yet; use --dry-run or finish SDK event binding first")
+        client = _build_lark_ws_client(self)
+        client.start()
 
 
 def build_long_connection_runtime_from_config(
@@ -122,16 +125,92 @@ def long_connection_runtime_status_to_markdown(status: LongConnectionRuntimeStat
 
 def long_connection_sdk_available() -> bool:
     try:
-        __import__("lark_oapi")
+        __import__("lark_oapi.ws")
     except Exception:
         return False
     return True
 
 
+def _build_lark_ws_client(runtime: FeishuLongConnectionRuntime) -> Any:
+    import lark_oapi as lark
+    import lark_oapi.ws as lark_ws
+
+    handler = _build_lark_event_handler(runtime)
+    return lark_ws.Client(
+        runtime.config.feishu.app_id,
+        runtime.config.feishu.app_secret,
+        log_level=getattr(lark.LogLevel, "INFO"),
+        event_handler=handler,
+        domain=runtime.config.feishu.api_base_url.rstrip("/"),
+    )
+
+
+def _build_lark_event_handler(runtime: FeishuLongConnectionRuntime) -> Any:
+    import lark_oapi as lark
+
+    builder = lark.EventDispatcherHandler.builder("", "")
+    builder = builder.register_p2_customized_event(
+        "im.message.receive_v1",
+        lambda event: runtime.handle_event_payload(_p2_message_event_to_payload(event), drain=True),
+    )
+    return builder.build()
+
+
+def _p2_message_event_to_payload(event: Any) -> dict[str, Any]:
+    event_obj = _object_to_dict(getattr(event, "event", None))
+    header = _object_to_dict(getattr(event, "header", None))
+    payload: dict[str, Any] = {
+        "schema": str(getattr(event, "schema", "") or "2.0"),
+        "header": header,
+        "event": event_obj,
+    }
+    event_id = str(header.get("event_id") or "").strip()
+    if event_id:
+        payload["event_id"] = event_id
+    return payload
+
+
+def _object_to_dict(value: Any) -> Any:
+    if value is None:
+        return {}
+    if isinstance(value, (str, int, float, bool)):
+        return value
+    if isinstance(value, list):
+        return [_object_to_dict(item) for item in value]
+    if isinstance(value, tuple):
+        return [_object_to_dict(item) for item in value]
+    if isinstance(value, dict):
+        return {str(key): _object_to_dict(item) for key, item in value.items() if item is not None}
+    if hasattr(value, "__dict__"):
+        return {str(key): _object_to_dict(item) for key, item in vars(value).items() if item is not None}
+    try:
+        return json.loads(json.dumps(value))
+    except TypeError:
+        return str(value)
+
+
+def _append_event_audit(payload: dict[str, Any], db_path: Path) -> None:
+    event = payload.get("event") if isinstance(payload.get("event"), dict) else {}
+    message = event.get("message") if isinstance(event.get("message"), dict) else {}
+    record = {
+        "event_id": payload.get("event_id") or payload.get("uuid") or "",
+        "chat_id": message.get("chat_id") or event.get("chat_id") or "",
+        "sender": event.get("sender") if isinstance(event.get("sender"), dict) else {},
+        "content_preview": str(message.get("content") or "")[:160],
+    }
+    audit_path = db_path.parent / "long-connection-events.jsonl"
+    try:
+        audit_path.parent.mkdir(parents=True, exist_ok=True)
+        with audit_path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(record, ensure_ascii=False) + "\n")
+    except OSError:
+        return
+
+
 def _next_steps(*, sdk_available: bool) -> list[str]:
     if sdk_available:
         return [
-            "Finish SDK event binding and start run-long-connection without --dry-run.",
+            "Start run-long-connection without --dry-run.",
             "Send one beta group message and collect evidence.",
         ]
     return [

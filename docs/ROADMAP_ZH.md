@@ -163,7 +163,7 @@
 仍缺：
 
 - 真实 beta 群 event subscription。
-- callback 模式公网部署；long_connection 模式不需要公网 callback，但需要 SDK 事件绑定。
+- callback 模式公网部署；long_connection 模式不需要公网 callback，已接入 SDK 事件绑定。
 - 真实 beta 群截图或录屏。
 - `docs/BETA_VALIDATION_REPORT_ZH.md`。
 

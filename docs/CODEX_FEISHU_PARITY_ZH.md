@@ -26,7 +26,7 @@
 | Ingress queue | 已完成 MVP | `BoundedIngressQueue` | 后续补持久化和 stale drop |
 | Worker/Daemon 分离 | 已完成 MVP | `ConnectorWorker` | 后续补常驻进程状态和优雅关闭 |
 | HTTP webhook service | 已完成本地版 | `run-webhook` / `/webhook` / `/healthz` | callback 模式还缺真实公网部署 |
-| Feishu long connection | 已完成 dry-run 骨架 | `feishu.event_mode=long_connection` / `run-long-connection --dry-run` / `FeishuLongConnectionRuntime` | 还缺 SDK 事件绑定和真实 beta 验收 |
+| Feishu long connection | 已完成 SDK 接入 | `feishu.event_mode=long_connection` / `run-long-connection` / `FeishuLongConnectionRuntime` / `lark-oapi` | 还缺真实 beta 验收 |
 | URL verification | 已完成 | challenge 响应 + verification token 校验 + `X-Lark-Signature` 校验 + encrypt payload 解密 | 待真实 beta 群验收 |
 | Message event parse | 已完成 MVP | `parse_message_event` | 后续补更多消息类型 |
 | Live send client | 已完成安全骨架 | `LiveFeishuClient` | 待真实 beta 群验收 |
@@ -55,7 +55,6 @@
 仍然缺：
 
 - callback 模式的公网 callback 部署
-- long_connection 模式的飞书 SDK 事件绑定
 - 飞书事件订阅配置
 - 更细 per-agent/per-chat 限流
 
@@ -79,5 +78,4 @@ Stage 3 后续仍需补：
 
 - card action payload
 - reply/thread/message_id 到 task_id 的绑定
-- long_connection SDK 真实事件绑定
 - 真实 beta 群验收报告
